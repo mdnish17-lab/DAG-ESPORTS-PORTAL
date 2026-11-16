@@ -14,6 +14,21 @@ const NAV = [
 ];
 const CURRENT = '/roster';
 
+const calcAge = (dob: string) => {
+  if (!dob) return null;
+  const d = new Date(dob);
+  const t = new Date();
+  let a = t.getFullYear() - d.getFullYear();
+  const m = t.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && t.getDate() < d.getDate())) a--;
+  return a;
+};
+
+const formatDob = (dob: string) => {
+  if (!dob) return '—';
+  return new Date(dob).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
+};
+
 const isStaff = (role: string) => {
   const r = (role || '').toLowerCase();
   return r === 'coach' || r === 'manager';
@@ -88,7 +103,10 @@ export default function RosterPage() {
         {expanded && (
           <div className="mt-4 pt-4 border-t border-gray-800 flex flex-col gap-2 text-sm animate-fadeIn">
             <div className="flex justify-between"><span className="text-gray-400 font-semibold">Full Name</span><span className="text-white">{player.full_name || '—'}</span></div>
-            <div className="flex justify-between"><span className="text-gray-400 font-semibold">Age</span><span className="text-white">{player.age ? player.age + ' years old' : '—'}</span></div>
+            <div className="flex justify-between"><span className="text-gray-400 font-semibold">Date of Birth</span><span className="text-white">{formatDob(player.date_of_birth)}</span></div>
+            <div className="flex justify-between"><span className="text-gray-400 font-semibold">Age</span><span className="text-white">{(calcAge(player.date_of_birth) ?? player.age) ? (calcAge(player.date_of_birth) ?? player.age) + ' years old' : '—'}</span></div>
+            <div className="flex justify-between"><span className="text-gray-400 font-semibold">MLBB ID</span><span className="text-white font-mono">{player.mlbb_id || '—'}</span></div>
+            <div className="flex justify-between"><span className="text-gray-400 font-semibold">Server</span><span className="text-white font-mono">{player.mlbb_server || '—'}</span></div>
             <div className="flex justify-between"><span className="text-gray-400 font-semibold">Stay</span><span className="text-white text-right">{player.stay || '—'}</span></div>
             <div className="mt-2">
               <span className="text-gray-400 font-semibold text-xs uppercase tracking-wider">Achievements</span>

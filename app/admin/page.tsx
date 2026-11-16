@@ -79,6 +79,9 @@ export default function AdminPage() {
   const [newImageUrl, setNewImageUrl] = useState('');
   const [newFullName, setNewFullName] = useState('');
   const [newAge, setNewAge] = useState('');
+  const [newDob, setNewDob] = useState('');
+  const [newMlbbId, setNewMlbbId] = useState('');
+  const [newServer, setNewServer] = useState('');
   const [newStay, setNewStay] = useState('');
   const [newAchievements, setNewAchievements] = useState('');
 
@@ -93,6 +96,7 @@ export default function AdminPage() {
   const [editForm, setEditForm] = useState({
     ign: '', role: 'Midlaner', main_hero: '', image_url: '',
     full_name: '', age: '', stay: '', achievements: '',
+    date_of_birth: '', mlbb_id: '', mlbb_server: '',
   });
 
   useEffect(() => {
@@ -338,12 +342,14 @@ export default function AdminPage() {
       main_hero: newMainHero.trim() || null, image_url: newImageUrl.trim() || null,
       full_name: newFullName.trim() || null, age: newAge ? Number(newAge) : null,
       stay: newStay.trim() || null, achievements: newAchievements.trim() || null,
+      date_of_birth: newDob || null, mlbb_id: newMlbbId.trim() || null, mlbb_server: newServer.trim() || null,
     });
     setAddingPlayer(false);
     if (!error) {
       alert('Player added!');
       setNewIgn(''); setNewRole('Midlaner'); setNewMainHero(''); setNewImageUrl('');
       setNewFullName(''); setNewAge(''); setNewStay(''); setNewAchievements('');
+      setNewDob(''); setNewMlbbId(''); setNewServer('');
       loadData();
     } else {
       alert('Error: ' + error.message);
@@ -362,6 +368,7 @@ export default function AdminPage() {
     setEditForm({
       ign: p.ign || '', role: p.role || 'Midlaner', main_hero: p.main_hero || '', image_url: p.image_url || '',
       full_name: p.full_name || '', age: p.age != null ? String(p.age) : '', stay: p.stay || '', achievements: p.achievements || '',
+      date_of_birth: p.date_of_birth || '', mlbb_id: p.mlbb_id || '', mlbb_server: p.mlbb_server || '',
     });
   }
 
@@ -371,6 +378,7 @@ export default function AdminPage() {
       image_url: editForm.image_url.trim() || null, full_name: editForm.full_name.trim() || null,
       age: editForm.age ? Number(editForm.age) : null, stay: editForm.stay.trim() || null,
       achievements: editForm.achievements.trim() || null,
+      date_of_birth: editForm.date_of_birth || null, mlbb_id: editForm.mlbb_id.trim() || null, mlbb_server: editForm.mlbb_server.trim() || null,
     }).eq('id', id);
     if (error) { alert('Failed to update player: ' + error.message); return; }
     setEditingId(null);
@@ -440,6 +448,14 @@ export default function AdminPage() {
                 </select>
                 <input type="text" placeholder="Full Name" value={newFullName} onChange={(e) => setNewFullName(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none" />
                 <input type="number" placeholder="Age" value={newAge} onChange={(e) => setNewAge(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none" />
+                <div>
+                  <label className="text-[10px] text-gray-500 uppercase tracking-wider">Date of Birth</label>
+                  <input type="date" value={newDob} onChange={(e) => setNewDob(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none w-full mt-1" />
+                </div>
+                <div className="flex gap-3">
+                  <input type="text" inputMode="numeric" placeholder="MLBB ID" value={newMlbbId} onChange={(e) => setNewMlbbId(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none w-1/2" />
+                  <input type="text" inputMode="numeric" placeholder="Server" value={newServer} onChange={(e) => setNewServer(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none w-1/2" />
+                </div>
                 <input type="text" placeholder="Location / Stay" value={newStay} onChange={(e) => setNewStay(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none" />
                 <input type="text" placeholder="Signature Hero" value={newMainHero} onChange={(e) => setNewMainHero(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none" />
                 <input type="text" placeholder="Image URL" value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none" />
@@ -470,6 +486,9 @@ export default function AdminPage() {
                             <input type="text" value={editForm.stay} onChange={(e) => setEditForm({ ...editForm, stay: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="Stay" />
                             <input type="text" value={editForm.main_hero} onChange={(e) => setEditForm({ ...editForm, main_hero: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="Signature Hero" />
                             <input type="text" value={editForm.image_url} onChange={(e) => setEditForm({ ...editForm, image_url: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs col-span-2" placeholder="Image URL" />
+                            <input type="text" value={editForm.mlbb_id} onChange={(e) => setEditForm({ ...editForm, mlbb_id: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="MLBB ID" />
+                            <input type="text" value={editForm.mlbb_server} onChange={(e) => setEditForm({ ...editForm, mlbb_server: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="Server" />
+                            <input type="date" value={editForm.date_of_birth} onChange={(e) => setEditForm({ ...editForm, date_of_birth: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs col-span-2" title="Date of Birth" />
                             <textarea value={editForm.achievements} onChange={(e) => setEditForm({ ...editForm, achievements: e.target.value })} rows={2} placeholder="Achievements" className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs col-span-2 md:col-span-4 resize-none" />
                           </div>
                           <div className="flex gap-2 justify-end">
@@ -490,6 +509,7 @@ export default function AdminPage() {
                             <div>
                               <p className="font-bold">{p.ign} <span className="text-[#ec2b7a] text-xs ml-1">({p.role})</span></p>
                               <p className="text-xs text-gray-400">{p.full_name || 'No Name'} {p.age ? `· ${p.age}y` : ''} {p.stay ? `· ${p.stay}` : ''}</p>
+                              {p.mlbb_id && <p className="text-[10px] text-gray-500">MLBB {p.mlbb_id}{p.mlbb_server ? ` (${p.mlbb_server})` : ''}</p>}
                             </div>
                           </div>
                           <div className="flex gap-2">
