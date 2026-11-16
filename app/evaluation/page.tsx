@@ -12,6 +12,7 @@ const NAV = [
   { href: '/roster', label: 'Roster' },
   { href: '/team-performance', label: 'Team Performance' },
   { href: '/evaluation', label: 'Evaluation' },
+  { href: '/planner', label: 'Planner' },
 ];
 const CURRENT = '/evaluation';
 
