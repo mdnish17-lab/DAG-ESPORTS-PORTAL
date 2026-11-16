@@ -20,6 +20,14 @@ const formatDate = (dateString: string) => {
   return date.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
 };
 
+// "18:30:00" -> "6:30 PM"
+const formatTime = (t: string) => {
+  if (!t) return '';
+  const [h, m] = t.split(':');
+  const hour = Number(h);
+  return `${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+};
+
 export default function Home() {
   const [activeTeam, setActiveTeamState] = useState<string>('DAG Ladies');
   const [teamReady, setTeamReady] = useState(false);
@@ -174,6 +182,9 @@ export default function Home() {
                         VS Match
                       </p>
                       <p className="font-extrabold text-lg truncate drop-shadow">{match.opponent_name}</p>
+                      {match.match_time && (
+                        <p className="text-xs text-gray-400 font-semibold mt-0.5">🕒 {formatTime(match.match_time)}</p>
+                      )}
                     </div>
                   </div>
                 ))

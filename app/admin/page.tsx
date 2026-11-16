@@ -23,6 +23,14 @@ const TEAMS = ['DAG Ladies', 'DAG Montrix'];
 const MATCH_TYPES = ['Scrim', 'Tournament', 'Scrim Bracket'];
 const TABS = ['Guide', 'Roster', 'Matches', 'Upcoming', 'Achievements'] as const;
 
+// "18:30:00" -> "6:30 PM"
+const formatTime = (t: string) => {
+  if (!t) return '';
+  const [h, m] = t.split(':');
+  const hour = Number(h);
+  return `${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
+};
+
 // Throws a readable error if a Supabase call failed
 function check(res: { error: any }, label: string) {
   if (res.error) throw new Error(`${label}: ${res.error.message} (${res.error.code ?? ''})`);
@@ -59,6 +67,7 @@ export default function AdminPage() {
 
   // --- Upcoming Match Form State ---
   const [upDate, setUpDate] = useState('');
+  const [upTime, setUpTime] = useState('');
   const [upMatchType, setUpMatchType] = useState('Scrim');
   const [upOpponent, setUpOpponent] = useState('');
   const [upLogo, setUpLogo] = useState('');
@@ -280,12 +289,12 @@ export default function AdminPage() {
     setSubmitting(true);
     const { error } = await supabase.from('matches').insert({
       team: activeTeam, status: 'upcoming', match_type: upMatchType,
-      match_date: upDate, opponent_name: upOpponent.trim(), opponent_logo: upLogo.trim() || null,
+      match_date: upDate, match_time: upTime || null, opponent_name: upOpponent.trim(), opponent_logo: upLogo.trim() || null,
     });
     setSubmitting(false);
     if (error) { alert('Failed to schedule match: ' + error.message); return; }
     alert('Upcoming match scheduled!');
-    setUpDate(''); setUpOpponent(''); setUpLogo(''); setUpMatchType('Scrim');
+    setUpDate(''); setUpTime(''); setUpOpponent(''); setUpLogo(''); setUpMatchType('Scrim');
     loadData();
   }
 
@@ -502,7 +511,10 @@ export default function AdminPage() {
             <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 h-fit shadow-xl">
               <h3 className="font-bold text-[#ec2b7a] uppercase mb-4">Schedule Upcoming Match</h3>
               <form onSubmit={handleAddUpcomingMatch} className="flex flex-col gap-3">
-                <input type="date" value={upDate} onChange={(e) => setUpDate(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" required />
+                <div className="flex gap-3">
+                  <input type="date" value={upDate} onChange={(e) => setUpDate(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none w-1/2" required />
+                  <input type="time" value={upTime} onChange={(e) => setUpTime(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none w-1/2" title="Match time" />
+                </div>
                 <div className="flex gap-3">
                   <select value={upMatchType} onChange={(e) => setUpMatchType(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none w-1/3 text-sm">
                     {MATCH_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
@@ -521,7 +533,7 @@ export default function AdminPage() {
                 {upcomingMatchesList.map((m) => (
                   <div key={m.id} className="bg-[#121212] border border-gray-800 p-4 rounded flex justify-between items-center">
                     <div>
-                      <p className="text-[#ec2b7a] text-xs font-bold">{m.match_date}</p>
+                      <p className="text-[#ec2b7a] text-xs font-bold">{m.match_date}{m.match_time ? ` · ${formatTime(m.match_time)}` : ''}</p>
                       <p className="font-bold">DAG vs {m.opponent_name} <span className="text-gray-500 text-xs ml-2 font-normal bg-gray-900 px-2 py-0.5 rounded">{m.match_type}</span></p>
                     </div>
                     <button onClick={() => deleteRecord('matches', m.id)} className="bg-red-900 text-red-300 text-xs px-3 py-1.5 rounded">Delete</button>
