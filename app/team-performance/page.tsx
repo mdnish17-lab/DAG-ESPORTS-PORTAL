@@ -6,6 +6,13 @@ import { supabase } from '../../lib/supabase';
 import { useEffect, useState } from 'react';
 
 const TEAMS = ['DAG Ladies', 'DAG Montrix'];
+const NAV = [
+  { href: '/', label: 'Dashboard' },
+  { href: '/roster', label: 'Roster' },
+  { href: '/team-performance', label: 'Team Performance' },
+  { href: '/evaluation', label: 'Evaluation' },
+];
+const CURRENT = '/team-performance';
 
 const formatDate = (dateString: string) => {
   if (!dateString) return '';
@@ -14,87 +21,130 @@ const formatDate = (dateString: string) => {
 };
 
 export default function TeamPerformancePage() {
-  const [activeTeam, setActiveTeam] = useState('DAG Ladies');
+  const [activeTeam, setActiveTeamState] = useState<string>('DAG Ladies');
+  const [teamReady, setTeamReady] = useState(false);
+  useEffect(() => {
+    const saved = localStorage.getItem('dag-active-team');
+    if (saved && TEAMS.includes(saved)) setActiveTeamState(saved);
+    setTeamReady(true);
+  }, []);
+  const setActiveTeam = (team: string) => { setActiveTeamState(team); localStorage.setItem('dag-active-team', team); };
+
   const [achievements, setAchievements] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!teamReady) return;
+    let cancelled = false;
     async function fetchAchievements() {
       setLoading(true);
-      const { data } = await supabase
-        .from('team_achievements')
-        .select('*')
-        .eq('team', activeTeam)
-        .order('date', { ascending: false });
-        
-      if (data) setAchievements(data);
+      const { data, error } = await supabase
+        .from('team_achievements').select('*').eq('team', activeTeam).order('date', { ascending: false });
+      if (error) console.error('Achievements error:', error);
+      if (cancelled) return;
+      setAchievements(data || []);
       setLoading(false);
     }
     fetchAchievements();
-  }, [activeTeam]);
+    return () => { cancelled = true; };
+  }, [activeTeam, teamReady]);
+
+  const champions = achievements.filter((a) => {
+    const p = (a.placement || '').toLowerCase();
+    return p.includes('champion') && !p.includes('runner');
+  }).length;
 
   return (
-    <main className="min-h-screen bg-[#121212] text-white relative overflow-hidden flex flex-col items-center pt-10 md:pt-20 p-6 md:p-10 pb-20">
-      
-      {/* Sparkling Background Magic - Tinted Pink */}
-      <div className="absolute inset-0 z-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-pink-900/10 via-[#121212] to-[#121212] pointer-events-none" />
-      <div className="absolute inset-0 z-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-30 animate-pulse pointer-events-none mix-blend-screen" />
+    <main className="min-h-screen bg-[#0a0508] text-white flex flex-col items-center pt-10 md:pt-16 p-6 md:p-10 pb-20 relative overflow-hidden">
+      <div className="fixed inset-0 z-0 pointer-events-none flex items-center justify-center">
+        <div className="absolute inset-0 bg-gradient-to-b from-[#121212]/90 via-[#121212]/80 to-[#121212] z-10"></div>
+        <img src="/dag-logo.jpg" alt="DAG Wallpaper" className="w-[150vw] md:w-[70vw] opacity-15 blur-[2px] grayscale-[30%] mix-blend-lighten z-0 object-contain" />
+      </div>
 
       <div className="relative z-10 w-full max-w-5xl flex flex-col items-center">
-        
-        <div className="flex gap-4 mb-6">
-          {TEAMS.map(team => (
-            <button key={team} onClick={() => setActiveTeam(team)} className={`px-8 py-2 rounded-full font-extrabold tracking-widest uppercase transition-colors border-2 ${activeTeam === team ? 'border-[#ec2b7a] bg-[#ec2b7a] text-white shadow-[0_0_20px_rgba(236,43,122,0.5)]' : 'border-gray-800 text-gray-500 hover:border-gray-600 backdrop-blur-sm'}`}>{team}</button>
+        <div className="flex gap-3 mb-6 p-1.5 rounded-full bg-black/50 border border-white/10 backdrop-blur">
+          {TEAMS.map((team) => (
+            <button key={team} type="button" onClick={() => setActiveTeam(team)}
+              className={`px-7 py-2 rounded-full font-extrabold tracking-widest uppercase text-sm transition-all ${
+                activeTeam === team ? 'bg-[#ec2b7a] text-white shadow-[0_0_20px_rgba(236,43,122,0.6)]' : 'text-gray-500 hover:text-white'}`}>
+              {team}
+            </button>
           ))}
         </div>
 
-        <div className="bg-[#1a0a10]/80 backdrop-blur-md p-8 md:p-10 rounded-xl border-t-4 border-[#ec2b7a] shadow-[0_10px_40px_rgba(236,43,122,0.2)] w-full flex flex-col md:flex-row justify-between items-center gap-8 mb-12">
-          <div>
-            <h1 className="text-4xl md:text-5xl font-extrabold mb-2 uppercase drop-shadow-lg">De Ant Gaming</h1>
-            <h2 className="text-2xl md:text-3xl text-[#ec2b7a] font-bold uppercase drop-shadow-md">{activeTeam.replace('DAG ', '')} Division</h2>
-            
-            {/* FIXED UNIFIED NAVIGATION */}
-            <div className="flex gap-4 text-xs md:text-sm font-semibold text-gray-300 tracking-wider items-center flex-wrap mt-6">
-              <Link href="/" className="hover:text-[#ec2b7a] transition-colors">DASHBOARD</Link> | 
-              <Link href="/roster" className="hover:text-[#ec2b7a] transition-colors">ROSTER</Link> |
-              <span className="text-[#ec2b7a] font-bold cursor-default shadow-[#ec2b7a]">TEAM PERFORMANCE</span> | 
-              <Link href="/player-performance" className="hover:text-[#ec2b7a] transition-colors">PLAYER PERFORMANCE</Link> |
-              <Link href="/admin" className="bg-[#ec2b7a] hover:bg-[#c92468] text-white px-4 py-1.5 rounded-md transition-colors shadow-lg ml-2">ADMIN</Link>
-            </div>
+        <div className="relative bg-[#2a0a18]/80 backdrop-blur-md p-8 md:p-10 rounded-2xl border border-[#ec2b7a]/30 shadow-[0_10px_50px_rgba(236,43,122,0.25)] w-full flex flex-col md:flex-row justify-between items-center gap-8 mb-12 overflow-hidden">
+          <div className="absolute -top-24 -left-24 w-64 h-64 rounded-full bg-[#ec2b7a]/20 blur-3xl pointer-events-none"></div>
+          <div className="relative">
+            <p className="text-xs tracking-[0.4em] text-gray-400 uppercase mb-2">De Ant Gaming</p>
+            <h1 className="text-4xl md:text-6xl font-black uppercase leading-tight bg-gradient-to-r from-[#ec2b7a] via-pink-300 to-white bg-clip-text text-transparent drop-shadow-lg">{activeTeam}</h1>
+            <p className="text-gray-300 font-semibold tracking-widest uppercase text-sm mt-2">Team Performance</p>
+            <nav className="flex gap-2 flex-wrap items-center mt-6">
+              {NAV.map((n) =>
+                n.href === CURRENT ? (
+                  <span key={n.href} className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[#ec2b7a] text-white shadow-[0_0_15px_rgba(236,43,122,0.5)]">{n.label}</span>
+                ) : (
+                  <Link key={n.href} href={n.href} className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider text-gray-300 border border-white/15 hover:border-[#ec2b7a] hover:text-[#ec2b7a] transition-colors">{n.label}</Link>
+                )
+              )}
+              <Link href="/admin" className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-white/10 hover:bg-white/20 text-white border border-white/10 transition-colors ml-1">Admin</Link>
+            </nav>
           </div>
-          <Image src="/dag-logo.jpg" alt="DAG Logo" width={200} height={200} className="object-contain drop-shadow-2xl" />
+          <Image src="/dag-logo.jpg" alt="DAG Logo" width={190} height={190} className="object-contain drop-shadow-2xl relative" />
         </div>
 
-        <h2 className="text-3xl font-black mb-8 text-transparent bg-clip-text bg-gradient-to-r from-pink-400 to-[#ec2b7a] tracking-widest uppercase text-center w-full border-b border-gray-800/50 pb-4">
-          Hall of Fame
-        </h2>
+        <div className="w-full">
+          <h2 className="text-3xl md:text-4xl font-black mb-6 text-center uppercase tracking-[0.25em] text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-[#ec2b7a] to-yellow-400 drop-shadow-lg">
+            🏆 Hall of Fame 🏆
+          </h2>
 
-        {loading ? (
-          <p className="text-[#ec2b7a] font-bold animate-pulse py-10">Accessing Trophy Room...</p>
-        ) : achievements.length === 0 ? (
-          <p className="text-gray-500 italic py-10">The legacy of {activeTeam} begins here. No achievements listed yet.</p>
-        ) : (
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full">
-            {achievements.map((ach) => (
-              <div key={ach.id} className="group relative bg-[#1a1a1a]/60 backdrop-blur-sm border border-gray-800 rounded-xl overflow-hidden shadow-2xl hover:border-[#ec2b7a]/50 hover:shadow-[0_0_30px_rgba(236,43,122,0.15)] transition-all duration-300">
-                <div className="h-64 w-full overflow-hidden relative">
-                  <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] to-transparent z-10" />
-                  <img src={ach.image_url} alt={ach.placement} className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-700" />
-                  <div className="absolute bottom-4 left-4 z-20">
-                    <p className="text-xs font-bold text-gray-300 bg-black/60 px-2 py-1 rounded backdrop-blur inline-block mb-2">
+          {!loading && achievements.length > 0 && (
+            <div className="grid grid-cols-3 gap-3 mb-8 max-w-xl mx-auto">
+              <div className="bg-[#1a1a1a]/80 border border-yellow-900/40 rounded-xl p-4 text-center">
+                <p className="text-3xl font-black text-yellow-400">{achievements.length}</p>
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Trophies</p>
+              </div>
+              <div className="bg-[#1a1a1a]/80 border border-yellow-900/40 rounded-xl p-4 text-center">
+                <p className="text-3xl font-black text-yellow-400">{champions}</p>
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Championships</p>
+              </div>
+              <div className="bg-[#1a1a1a]/80 border border-yellow-900/40 rounded-xl p-4 text-center">
+                <p className="text-sm font-black text-yellow-400 leading-9">{formatDate(achievements[0].date)}</p>
+                <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest">Latest</p>
+              </div>
+            </div>
+          )}
+
+          {loading ? (
+            <p className="text-gray-500 italic py-16 text-center animate-pulse">Loading achievements...</p>
+          ) : achievements.length === 0 ? (
+            <p className="text-gray-500 italic py-16 text-center">The legacy of {activeTeam} begins here. No achievements listed yet.</p>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {achievements.map((ach) => (
+                <div key={ach.id}
+                  className="bg-[#1a1a1a]/90 backdrop-blur border border-yellow-900/40 rounded-2xl overflow-hidden shadow-2xl hover:border-yellow-500/60 hover:shadow-[0_0_30px_rgba(234,179,8,0.2)] transition-all hover:-translate-y-1.5 group">
+                  {ach.image_url ? (
+                    <div className="h-48 overflow-hidden bg-black relative">
+                      <img src={ach.image_url} alt={ach.placement} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-[#1a1a1a] via-transparent to-transparent"></div>
+                    </div>
+                  ) : (
+                    <div className="h-48 bg-gradient-to-br from-[#2a0a18] to-[#121212] flex items-center justify-center">
+                      <span className="text-6xl">🏆</span>
+                    </div>
+                  )}
+                  <div className="p-5">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-yellow-500 bg-yellow-900/30 border border-yellow-700/40 px-2 py-1 rounded-full">
                       {formatDate(ach.date)}
-                    </p>
-                    <h3 className="text-3xl font-black text-white drop-shadow-lg leading-tight uppercase">{ach.placement}</h3>
+                    </span>
+                    <h3 className="text-xl font-black uppercase text-white mt-3 mb-1 drop-shadow">{ach.placement}</h3>
+                    <p className="text-gray-400 text-sm">{ach.venue || '—'}</p>
                   </div>
                 </div>
-                <div className="p-6 relative z-20">
-                  <p className="text-sm font-bold text-[#ec2b7a] uppercase tracking-widest mb-1">Tournament / Venue</p>
-                  <p className="text-lg text-gray-200">{ach.venue}</p>
-                </div>
-              </div>
-            ))}
-          </div>
-        )}
+              ))}
+            </div>
+          )}
+        </div>
       </div>
     </main>
   );
