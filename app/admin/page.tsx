@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import SiteDecor from '../../lib/SiteDecor';
 import { getTeamTheme, themeStyle } from '../../lib/teamTheme';
 import { supabase } from '../../lib/supabase';
 import { useEffect, useState } from 'react';
@@ -101,6 +102,7 @@ export default function AdminPage() {
   // --- Achievement Form State ---
   const [achDate, setAchDate] = useState('');
   const [achPlacement, setAchPlacement] = useState('');
+  const [achTournament, setAchTournament] = useState('');
   const [achVenue, setAchVenue] = useState('');
   const [achImage, setAchImage] = useState('');
 
@@ -319,7 +321,7 @@ export default function AdminPage() {
     e.preventDefault();
     setSubmitting(true);
     const { data, error } = await supabase.from('team_achievements').insert({
-      team: activeTeam, date: achDate, placement: achPlacement, venue: achVenue, image_url: achImage,
+      team: activeTeam, date: achDate, placement: achPlacement, tournament: achTournament.trim(), venue: achVenue.trim() || null, image_url: achImage,
     }).select();
     setSubmitting(false);
     if (error) {
@@ -331,7 +333,7 @@ export default function AdminPage() {
       return;
     }
     alert('Achievement added successfully!');
-    setAchDate(''); setAchPlacement(''); setAchVenue(''); setAchImage('');
+    setAchDate(''); setAchPlacement(''); setAchTournament(''); setAchVenue(''); setAchImage('');
     loadData();
   }
 
@@ -353,7 +355,7 @@ export default function AdminPage() {
     const { error } = await supabase.from('players').insert({
       team: activeTeam, ign: newIgn.trim(), role: newRole,
       main_hero: newMainHero.trim() || null, image_url: newImageUrl.trim() || null,
-      full_name: newFullName.trim() || null, age: newDob ? calcAge(newDob) : newAge ? Number(newAge) : null,
+      full_name: newFullName.trim() || null, age: newDob ? calcAge(newDob) : null,
       stay: newStay.trim() || null, achievements: newAchievements.trim() || null,
       date_of_birth: newDob || null, mlbb_id: newMlbbId.trim() || null, mlbb_server: newServer.trim() || null,
     });
@@ -400,6 +402,7 @@ export default function AdminPage() {
 
   return (
     <main className="min-h-screen bg-[#0a0508] text-white p-6 md:p-10 relative overflow-hidden" style={themeStyle(activeTeam)}>
+      <SiteDecor />
       <div className="fixed inset-0 z-0 pointer-events-none flex items-center justify-center">
         <div className="absolute inset-0 bg-gradient-to-b from-[#121212]/90 via-[#121212]/80 to-[#121212] z-10"></div>
         <img key={activeTeam} src={getTeamTheme(activeTeam).logo} alt="DAG Wallpaper" className="w-[150vw] md:w-[70vw] opacity-15 blur-[2px] grayscale-[30%] mix-blend-lighten z-0 object-contain" />
@@ -460,10 +463,10 @@ export default function AdminPage() {
                   {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                 </select>
                 <input type="text" placeholder="Full Name" value={newFullName} onChange={(e) => setNewFullName(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none" />
-                <input type="number" placeholder="Age (auto from birth date)" value={newDob ? String(calcAge(newDob) ?? '') : newAge} onChange={(e) => setNewAge(e.target.value)} disabled={!!newDob} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none disabled:opacity-60 disabled:cursor-not-allowed" />
                 <div>
                   <label className="text-[10px] text-gray-500 uppercase tracking-wider">Date of Birth</label>
                   <input type="date" value={newDob} onChange={(e) => setNewDob(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none w-full mt-1" />
+                  {newDob && <p className="text-xs text-gray-400 mt-1">Age: <span className="text-white font-bold">{calcAge(newDob) ?? '—'}</span> (calculated automatically)</p>}
                 </div>
                 <div className="flex gap-3">
                   <input type="text" inputMode="numeric" placeholder="MLBB ID" value={newMlbbId} onChange={(e) => setNewMlbbId(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none w-1/2" />
@@ -495,13 +498,13 @@ export default function AdminPage() {
                               {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                             </select>
                             <input type="text" value={editForm.full_name} onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="Full Name" />
-                            <input type="number" value={editForm.date_of_birth ? String(calcAge(editForm.date_of_birth) ?? '') : editForm.age} onChange={(e) => setEditForm({ ...editForm, age: e.target.value })} disabled={!!editForm.date_of_birth} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs disabled:opacity-60 disabled:cursor-not-allowed" placeholder="Age (auto)" />
                             <input type="text" value={editForm.stay} onChange={(e) => setEditForm({ ...editForm, stay: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="Stay" />
                             <input type="text" value={editForm.main_hero} onChange={(e) => setEditForm({ ...editForm, main_hero: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="Signature Hero" />
                             <input type="text" value={editForm.image_url} onChange={(e) => setEditForm({ ...editForm, image_url: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs col-span-2" placeholder="Image URL" />
                             <input type="text" value={editForm.mlbb_id} onChange={(e) => setEditForm({ ...editForm, mlbb_id: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="MLBB ID" />
                             <input type="text" value={editForm.mlbb_server} onChange={(e) => setEditForm({ ...editForm, mlbb_server: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="Server" />
                             <input type="date" value={editForm.date_of_birth} onChange={(e) => setEditForm({ ...editForm, date_of_birth: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs col-span-2" title="Date of Birth" />
+                            {editForm.date_of_birth && <p className="text-xs text-gray-400 col-span-2 self-center">Age: <span className="text-white font-bold">{calcAge(editForm.date_of_birth) ?? '—'}</span> (auto)</p>}
                             <textarea value={editForm.achievements} onChange={(e) => setEditForm({ ...editForm, achievements: e.target.value })} rows={2} placeholder="Achievements" className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs col-span-2 md:col-span-4 resize-none" />
                           </div>
                           <div className="flex gap-2 justify-end">
@@ -584,7 +587,8 @@ export default function AdminPage() {
               <form onSubmit={handleAddAchievement} className="flex flex-col gap-3">
                 <input type="date" value={achDate} onChange={(e) => setAchDate(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" required />
                 <input type="text" placeholder="Placement (e.g. Champion, 1st Runner Up)" value={achPlacement} onChange={(e) => setAchPlacement(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" required />
-                <input type="text" placeholder="Tournament Name / Venue" value={achVenue} onChange={(e) => setAchVenue(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" required />
+                <input type="text" placeholder="Tournament Name" value={achTournament} onChange={(e) => setAchTournament(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" required />
+                <input type="text" placeholder="Venue (e.g. Kuala Lumpur, Online)" value={achVenue} onChange={(e) => setAchVenue(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" />
                 <input type="text" placeholder="Achievement Image URL" value={achImage} onChange={(e) => setAchImage(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" required />
                 <button type="submit" disabled={submitting} className="bg-yellow-700 hover:bg-yellow-600 font-bold uppercase py-2 rounded mt-2 text-white">Save Achievement</button>
               </form>
@@ -600,7 +604,8 @@ export default function AdminPage() {
                       <img src={a.image_url} alt="ach" className="w-12 h-12 object-cover rounded" />
                       <div>
                         <p className="text-yellow-500 font-black">{a.placement}</p>
-                        <p className="text-sm font-bold">{a.venue}</p>
+                        <p className="text-sm font-bold">{a.tournament || a.venue}</p>
+                        {a.tournament && a.venue && <p className="text-xs text-gray-400">📍 {a.venue}</p>}
                         <p className="text-xs text-gray-500">{a.date}</p>
                       </div>
                     </div>

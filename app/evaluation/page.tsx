@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import SiteDecor from '../../lib/SiteDecor';
 import { getTeamTheme, themeStyle } from '../../lib/teamTheme';
 import { supabase } from '../../lib/supabase';
 import { useEffect, useState } from 'react';
@@ -199,6 +200,7 @@ export default function EvaluationPage() {
 
   return (
     <main className="min-h-screen bg-[#0a0508] text-white flex flex-col items-center pt-10 md:pt-16 p-6 md:p-10 pb-20 relative overflow-hidden" style={themeStyle(activeTeam)}>
+      <SiteDecor />
       <div className="fixed inset-0 z-0 pointer-events-none flex items-center justify-center">
         <div className="absolute inset-0 bg-gradient-to-b from-[#121212]/90 via-[#121212]/80 to-[#121212] z-10 transition-colors duration-1000"></div>
         <img key={activeTeam} src={getTeamTheme(activeTeam).logo} alt="DAG Wallpaper" className="w-[150vw] md:w-[70vw] opacity-15 blur-[2px] grayscale-[30%] mix-blend-lighten z-0 object-contain" />
