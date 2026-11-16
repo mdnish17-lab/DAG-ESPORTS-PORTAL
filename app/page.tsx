@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { getTeamTheme, themeStyle } from '../lib/teamTheme';
 import { supabase } from '../lib/supabase';
 import { useEffect, useState } from 'react';
 
@@ -78,10 +79,10 @@ export default function Home() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0a0508] text-white flex flex-col items-center pt-10 md:pt-16 p-6 md:p-10 pb-20 relative overflow-hidden">
+    <main className="min-h-screen bg-[#0a0508] text-white flex flex-col items-center pt-10 md:pt-16 p-6 md:p-10 pb-20 relative overflow-hidden" style={themeStyle(activeTeam)}>
       <div className="fixed inset-0 z-0 pointer-events-none flex items-center justify-center">
         <div className="absolute inset-0 bg-gradient-to-b from-[#121212]/90 via-[#121212]/80 to-[#121212] z-10"></div>
-        <img src="/dag-logo.jpg" alt="DAG Wallpaper" className="w-[150vw] md:w-[70vw] opacity-15 blur-[2px] grayscale-[30%] mix-blend-lighten z-0 object-contain" />
+        <img key={activeTeam} src={getTeamTheme(activeTeam).logo} alt="DAG Wallpaper" className="w-[150vw] md:w-[70vw] opacity-15 blur-[2px] grayscale-[30%] mix-blend-lighten z-0 object-contain" />
       </div>
 
       <div className="relative z-10 w-full max-w-5xl flex flex-col items-center">
@@ -90,31 +91,31 @@ export default function Home() {
           {TEAMS.map((team) => (
             <button key={team} onClick={() => setActiveTeam(team)}
               className={`px-7 py-2 rounded-full font-extrabold tracking-widest uppercase text-sm transition-all ${
-                activeTeam === team ? 'bg-[#ec2b7a] text-white shadow-[0_0_20px_rgba(236,43,122,0.6)]' : 'text-gray-500 hover:text-white'}`}>
+                activeTeam === team ? 'bg-accent text-white shadow-[0_0_20px_var(--accent-glow)]' : 'text-gray-500 hover:text-white'}`}>
               {team}
             </button>
           ))}
         </div>
 
         {/* Header */}
-        <div className="relative bg-[#2a0a18]/80 backdrop-blur-md p-8 md:p-10 rounded-2xl border border-[#ec2b7a]/30 shadow-[0_10px_50px_rgba(236,43,122,0.25)] w-full flex flex-col md:flex-row justify-between items-center gap-8 mb-8 overflow-hidden">
-          <div className="absolute -top-24 -left-24 w-64 h-64 rounded-full bg-[#ec2b7a]/20 blur-3xl pointer-events-none"></div>
+        <div className="relative bg-accent-deep/80 backdrop-blur-md p-8 md:p-10 rounded-2xl border border-accent/30 shadow-[0_10px_50px_var(--accent-glow-soft)] w-full flex flex-col md:flex-row justify-between items-center gap-8 mb-8 overflow-hidden">
+          <div className="absolute -top-24 -left-24 w-64 h-64 rounded-full bg-accent/20 blur-3xl pointer-events-none"></div>
           <div className="relative">
             <p className="text-xs tracking-[0.4em] text-gray-400 uppercase mb-2">De Ant Gaming</p>
-            <h1 className="text-4xl md:text-6xl font-black uppercase leading-tight bg-gradient-to-r from-[#ec2b7a] via-pink-300 to-white bg-clip-text text-transparent drop-shadow-lg">{activeTeam}</h1>
+            <h1 className="text-4xl md:text-6xl font-black uppercase leading-tight bg-gradient-to-r from-accent via-pink-300 to-white bg-clip-text text-transparent drop-shadow-lg">{activeTeam}</h1>
             <p className="text-gray-300 font-semibold tracking-widest uppercase text-sm mt-2">Dashboard</p>
             <nav className="flex gap-2 flex-wrap items-center mt-6">
               {NAV.map((n) =>
                 n.href === CURRENT ? (
-                  <span key={n.href} className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[#ec2b7a] text-white shadow-[0_0_15px_rgba(236,43,122,0.5)]">{n.label}</span>
+                  <span key={n.href} className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-accent text-white shadow-[0_0_15px_var(--accent-glow)]">{n.label}</span>
                 ) : (
-                  <Link key={n.href} href={n.href} className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider text-gray-300 border border-white/15 hover:border-[#ec2b7a] hover:text-[#ec2b7a] transition-colors">{n.label}</Link>
+                  <Link key={n.href} href={n.href} className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider text-gray-300 border border-white/15 hover:border-accent hover:text-accent transition-colors">{n.label}</Link>
                 )
               )}
               <Link href="/admin" className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-white/10 hover:bg-white/20 text-white border border-white/10 transition-colors ml-1">Admin</Link>
             </nav>
           </div>
-          <Image src="/dag-logo.jpg" alt="DAG Logo" width={190} height={190} className="object-contain drop-shadow-2xl relative" />
+          <Image key={activeTeam} src={getTeamTheme(activeTeam).logo} alt="DAG Logo" width={190} height={190} className="object-contain drop-shadow-2xl relative animate-fadeIn" />
         </div>
 
         {/* Stats */}
@@ -135,11 +136,11 @@ export default function Home() {
             <h3 className="text-red-500 text-[10px] font-bold mb-1 uppercase tracking-widest">Total Losses</h3>
             <p className="text-4xl font-black text-red-500">{totalLosses}</p>
           </div>
-          <div className="col-span-2 md:col-span-1 bg-[#1a0a10]/90 backdrop-blur p-4 rounded-xl border-2 border-[#ec2b7a] text-center shadow-[0_0_25px_rgba(236,43,122,0.2)] flex flex-col items-center justify-center">
-            <h3 className="text-[#ec2b7a] text-[10px] font-bold mb-2 uppercase tracking-widest">Win Rate</h3>
-            <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: `conic-gradient(#ec2b7a ${winRate * 3.6}deg, rgba(255,255,255,0.08) 0deg)` }}>
+          <div className="col-span-2 md:col-span-1 bg-[#1a0a10]/90 backdrop-blur p-4 rounded-xl border-2 border-accent text-center shadow-[0_0_25px_var(--accent-glow-soft)] flex flex-col items-center justify-center">
+            <h3 className="text-accent text-[10px] font-bold mb-2 uppercase tracking-widest">Win Rate</h3>
+            <div className="w-20 h-20 rounded-full flex items-center justify-center" style={{ background: `conic-gradient(var(--accent-color) ${winRate * 3.6}deg, rgba(255,255,255,0.08) 0deg)` }}>
               <div className="w-[62px] h-[62px] rounded-full bg-[#1a0a10] flex items-center justify-center">
-                <span className="text-xl font-black text-[#ec2b7a]">{winRate}%</span>
+                <span className="text-xl font-black text-accent">{winRate}%</span>
               </div>
             </div>
           </div>
@@ -171,9 +172,9 @@ export default function Home() {
                 <p className="text-gray-500 italic text-sm bg-black/40 p-4 rounded-xl backdrop-blur border border-gray-900">No scheduled matches.</p>
               ) : (
                 upcomingMatches.map((match) => (
-                  <div key={match.id} className="bg-[#1a1a1a]/80 backdrop-blur border border-gray-800 p-5 rounded-xl flex gap-4 items-center shadow-lg hover:border-[#ec2b7a]/60 hover:-translate-y-0.5 transition-all">
-                    <div className="flex flex-col items-center justify-center bg-[#121212] w-16 h-16 rounded-lg border border-[#ec2b7a]/40 flex-shrink-0">
-                      <span className="text-[10px] text-[#ec2b7a] font-bold uppercase">{new Date(match.match_date).toLocaleString('default', { month: 'short' })}</span>
+                  <div key={match.id} className="bg-[#1a1a1a]/80 backdrop-blur border border-gray-800 p-5 rounded-xl flex gap-4 items-center shadow-lg hover:border-accent/60 hover:-translate-y-0.5 transition-all">
+                    <div className="flex flex-col items-center justify-center bg-[#121212] w-16 h-16 rounded-lg border border-accent/40 flex-shrink-0">
+                      <span className="text-[10px] text-accent font-bold uppercase">{new Date(match.match_date).toLocaleString('default', { month: 'short' })}</span>
                       <span className="text-2xl font-black leading-none">{new Date(match.match_date).getDate()}</span>
                     </div>
                     <div className="min-w-0">
@@ -227,7 +228,7 @@ export default function Home() {
                       {match.match_review && (
                         <div className="mt-4 border-t border-gray-800/50 pt-4">
                           <button onClick={() => setExpandedReview(expandedReview === match.id ? null : match.id)}
-                            className="text-[#ec2b7a] text-xs font-bold uppercase tracking-widest flex items-center gap-2 hover:text-white transition-colors">
+                            className="text-accent text-xs font-bold uppercase tracking-widest flex items-center gap-2 hover:text-white transition-colors">
                             {expandedReview === match.id ? 'Hide Coach Review ▲' : 'Read Coach Review ▼'}
                           </button>
                           {expandedReview === match.id && (
@@ -248,7 +249,7 @@ export default function Home() {
                             <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 animate-fadeIn">
                               {screenshots.map((url: string, i: number) => (
                                 <a key={i} href={url} target="_blank" rel="noopener noreferrer"
-                                  className="block overflow-hidden rounded-lg border border-gray-700 hover:border-[#ec2b7a] transition-colors">
+                                  className="block overflow-hidden rounded-lg border border-gray-700 hover:border-accent transition-colors">
                                   <img src={url} alt={`Match result screenshot ${i + 1}`} className="w-full h-auto object-cover hover:scale-105 transition-transform duration-300" />
                                 </a>
                               ))}

@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { getTeamTheme, themeStyle } from '../../lib/teamTheme';
 import { supabase } from '../../lib/supabase';
 import { useEffect, useState } from 'react';
 
@@ -193,13 +194,13 @@ export default function EvaluationPage() {
 
   let currentGlow = 'from-transparent via-transparent';
   if (selectedPlayer && summary) currentGlow = getEvaluationStatus(summary.overallEvaluation).glow;
-  else if (selectedPlayer && loadingStats) currentGlow = 'from-[#ec2b7a]/20 via-[#ec2b7a]/5 animate-pulse';
+  else if (selectedPlayer && loadingStats) currentGlow = 'from-accent/20 via-accent/5 animate-pulse';
 
   return (
-    <main className="min-h-screen bg-[#0a0508] text-white flex flex-col items-center pt-10 md:pt-16 p-6 md:p-10 pb-20 relative overflow-hidden">
+    <main className="min-h-screen bg-[#0a0508] text-white flex flex-col items-center pt-10 md:pt-16 p-6 md:p-10 pb-20 relative overflow-hidden" style={themeStyle(activeTeam)}>
       <div className="fixed inset-0 z-0 pointer-events-none flex items-center justify-center">
         <div className="absolute inset-0 bg-gradient-to-b from-[#121212]/90 via-[#121212]/80 to-[#121212] z-10 transition-colors duration-1000"></div>
-        <img src="/dag-logo.jpg" alt="DAG Wallpaper" className="w-[150vw] md:w-[70vw] opacity-15 blur-[2px] grayscale-[30%] mix-blend-lighten z-0 object-contain" />
+        <img key={activeTeam} src={getTeamTheme(activeTeam).logo} alt="DAG Wallpaper" className="w-[150vw] md:w-[70vw] opacity-15 blur-[2px] grayscale-[30%] mix-blend-lighten z-0 object-contain" />
         <div className={`absolute inset-0 z-20 bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] to-transparent transition-all duration-1000 ease-in-out opacity-80 ${currentGlow}`}></div>
       </div>
 
@@ -209,31 +210,31 @@ export default function EvaluationPage() {
           {TEAMS.map((team) => (
             <button key={team} onClick={() => setActiveTeam(team)}
               className={`px-7 py-2 rounded-full font-extrabold tracking-widest uppercase text-sm transition-all ${
-                activeTeam === team ? 'bg-[#ec2b7a] text-white shadow-[0_0_20px_rgba(236,43,122,0.6)]' : 'text-gray-500 hover:text-white'}`}>
+                activeTeam === team ? 'bg-accent text-white shadow-[0_0_20px_var(--accent-glow)]' : 'text-gray-500 hover:text-white'}`}>
               {team}
             </button>
           ))}
         </div>
 
         {/* Header */}
-        <div className="relative bg-[#2a0a18]/80 backdrop-blur-md p-8 md:p-10 rounded-2xl border border-[#ec2b7a]/30 shadow-[0_10px_50px_rgba(236,43,122,0.25)] w-full flex flex-col md:flex-row justify-between items-center gap-8 mb-12 overflow-hidden">
-          <div className="absolute -top-24 -left-24 w-64 h-64 rounded-full bg-[#ec2b7a]/20 blur-3xl pointer-events-none"></div>
+        <div className="relative bg-accent-deep/80 backdrop-blur-md p-8 md:p-10 rounded-2xl border border-accent/30 shadow-[0_10px_50px_var(--accent-glow-soft)] w-full flex flex-col md:flex-row justify-between items-center gap-8 mb-12 overflow-hidden">
+          <div className="absolute -top-24 -left-24 w-64 h-64 rounded-full bg-accent/20 blur-3xl pointer-events-none"></div>
           <div className="relative">
             <p className="text-xs tracking-[0.4em] text-gray-400 uppercase mb-2">De Ant Gaming</p>
-            <h1 className="text-4xl md:text-6xl font-black uppercase leading-tight bg-gradient-to-r from-[#ec2b7a] via-pink-300 to-white bg-clip-text text-transparent drop-shadow-lg">{activeTeam}</h1>
+            <h1 className="text-4xl md:text-6xl font-black uppercase leading-tight bg-gradient-to-r from-accent via-pink-300 to-white bg-clip-text text-transparent drop-shadow-lg">{activeTeam}</h1>
             <p className="text-gray-300 font-semibold tracking-widest uppercase text-sm mt-2">Evaluation</p>
             <nav className="flex gap-2 flex-wrap items-center mt-6">
               {NAV.map((n) =>
                 n.href === CURRENT ? (
-                  <span key={n.href} className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-[#ec2b7a] text-white shadow-[0_0_15px_rgba(236,43,122,0.5)]">{n.label}</span>
+                  <span key={n.href} className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-accent text-white shadow-[0_0_15px_var(--accent-glow)]">{n.label}</span>
                 ) : (
-                  <Link key={n.href} href={n.href} className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider text-gray-300 border border-white/15 hover:border-[#ec2b7a] hover:text-[#ec2b7a] transition-colors">{n.label}</Link>
+                  <Link key={n.href} href={n.href} className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider text-gray-300 border border-white/15 hover:border-accent hover:text-accent transition-colors">{n.label}</Link>
                 )
               )}
               <Link href="/admin" className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-white/10 hover:bg-white/20 text-white border border-white/10 transition-colors ml-1">Admin</Link>
             </nav>
           </div>
-          <Image src="/dag-logo.jpg" alt="DAG Logo" width={190} height={190} className="object-contain drop-shadow-2xl relative" />
+          <Image key={activeTeam} src={getTeamTheme(activeTeam).logo} alt="DAG Logo" width={190} height={190} className="object-contain drop-shadow-2xl relative animate-fadeIn" />
         </div>
 
         {/* Player selection */}
@@ -249,16 +250,16 @@ export default function EvaluationPage() {
               {playersOnly.map((player) => (
                 <div key={player.id} onClick={() => handlePlayerClick(player)}
                   className={`bg-[#1a1a1a]/80 backdrop-blur p-5 rounded-xl border transition-all flex flex-col items-center text-center cursor-pointer group shadow-lg hover:-translate-y-1.5 ${
-                    selectedPlayer?.id === player.id ? 'border-[#ec2b7a] ring-2 ring-[#ec2b7a]/50 shadow-[0_0_25px_rgba(236,43,122,0.35)]' : 'border-gray-800 hover:border-[#ec2b7a]/60 hover:shadow-[0_0_20px_rgba(236,43,122,0.2)]'}`}>
+                    selectedPlayer?.id === player.id ? 'border-accent ring-2 ring-accent/50 shadow-[0_0_25px_var(--accent-glow)]' : 'border-gray-800 hover:border-accent/60 hover:shadow-[0_0_20px_var(--accent-glow-soft)]'}`}>
                   {player.image_url ? (
-                    <img src={player.image_url} className="w-16 h-16 rounded-full object-cover object-top mb-4 border-2 border-[#ec2b7a] shadow-lg group-hover:scale-110 transition-transform" />
+                    <img src={player.image_url} className="w-16 h-16 rounded-full object-cover object-top mb-4 border-2 border-accent shadow-lg group-hover:scale-110 transition-transform" />
                   ) : (
-                    <div className="w-16 h-16 bg-[#2a0a18] rounded-full flex items-center justify-center mb-4 border-2 border-[#ec2b7a] shadow-lg">
+                    <div className="w-16 h-16 bg-accent-deep rounded-full flex items-center justify-center mb-4 border-2 border-accent shadow-lg">
                       <span className="font-bold text-xl text-white">{player.ign?.charAt(0).toUpperCase()}</span>
                     </div>
                   )}
-                  <h3 className="text-lg font-bold text-white mb-1 group-hover:text-[#ec2b7a] transition-colors">{player.ign}</h3>
-                  <p className="text-[#ec2b7a] text-xs font-bold uppercase tracking-wider">{player.role}</p>
+                  <h3 className="text-lg font-bold text-white mb-1 group-hover:text-accent transition-colors">{player.ign}</h3>
+                  <p className="text-accent text-xs font-bold uppercase tracking-wider">{player.role}</p>
                 </div>
               ))}
             </div>
@@ -269,19 +270,19 @@ export default function EvaluationPage() {
         {selectedPlayer !== null && (() => {
           const overallStatus = getEvaluationStatus(summary?.overallEvaluation || 0);
           return (
-            <div className="w-full mt-10 bg-[#1a1a1a]/90 backdrop-blur-xl p-6 md:p-8 rounded-2xl border-t-4 border-[#ec2b7a] shadow-2xl animate-fadeIn relative overflow-hidden">
+            <div className="w-full mt-10 bg-[#1a1a1a]/90 backdrop-blur-xl p-6 md:p-8 rounded-2xl border-t-4 border-accent shadow-2xl animate-fadeIn relative overflow-hidden">
               <div className="flex justify-between items-start border-b border-gray-800/50 pb-6 gap-4 relative z-10">
                 <div className="flex items-center gap-5">
                   {selectedPlayer.image_url ? (
-                    <img src={selectedPlayer.image_url} className="w-20 h-20 rounded-full object-cover object-top border-2 border-[#ec2b7a] shadow-lg" />
+                    <img src={selectedPlayer.image_url} className="w-20 h-20 rounded-full object-cover object-top border-2 border-accent shadow-lg" />
                   ) : (
-                    <div className="w-20 h-20 bg-[#2a0a18] rounded-full flex items-center justify-center border-2 border-[#ec2b7a] shadow-lg">
+                    <div className="w-20 h-20 bg-accent-deep rounded-full flex items-center justify-center border-2 border-accent shadow-lg">
                       <span className="font-bold text-3xl text-white">{selectedPlayer.ign?.charAt(0).toUpperCase()}</span>
                     </div>
                   )}
                   <div>
                     <h3 className="text-3xl font-extrabold uppercase drop-shadow-md">{selectedPlayer.ign}</h3>
-                    <p className="text-[#ec2b7a] text-xs font-bold uppercase tracking-widest mt-1">{selectedPlayer.role}</p>
+                    <p className="text-accent text-xs font-bold uppercase tracking-widest mt-1">{selectedPlayer.role}</p>
                     <p className="text-gray-300 text-sm mt-1">Signature Hero: <span className="text-white font-bold">{selectedPlayer.main_hero || '—'}</span></p>
                   </div>
                 </div>
@@ -289,7 +290,7 @@ export default function EvaluationPage() {
               </div>
 
               {loadingStats ? (
-                <p className="text-center text-[#ec2b7a] py-16 font-bold animate-pulse tracking-widest uppercase">Calculating metrics...</p>
+                <p className="text-center text-accent py-16 font-bold animate-pulse tracking-widest uppercase">Calculating metrics...</p>
               ) : summary ? (
                 <div className="relative z-10">
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6">
@@ -380,7 +381,7 @@ export default function EvaluationPage() {
                             )}
 
                             {!isAbsent && (
-                              <div className="mt-4 bg-black/40 p-4 rounded border-l-4 border-[#ec2b7a] text-sm text-gray-200 italic shadow-inner">
+                              <div className="mt-4 bg-black/40 p-4 rounded border-l-4 border-accent text-sm text-gray-200 italic shadow-inner">
                                 "{log.coach_comment || 'No specific feedback left for this match.'}"
                               </div>
                             )}

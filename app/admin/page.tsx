@@ -1,6 +1,7 @@
 "use client";
 
 import Link from 'next/link';
+import { getTeamTheme, themeStyle } from '../../lib/teamTheme';
 import { supabase } from '../../lib/supabase';
 import { useEffect, useState } from 'react';
 
@@ -398,10 +399,10 @@ export default function AdminPage() {
   }
 
   return (
-    <main className="min-h-screen bg-[#0a0508] text-white p-6 md:p-10 relative overflow-hidden">
+    <main className="min-h-screen bg-[#0a0508] text-white p-6 md:p-10 relative overflow-hidden" style={themeStyle(activeTeam)}>
       <div className="fixed inset-0 z-0 pointer-events-none flex items-center justify-center">
         <div className="absolute inset-0 bg-gradient-to-b from-[#121212]/90 via-[#121212]/80 to-[#121212] z-10"></div>
-        <img src="/dag-logo.jpg" alt="DAG Wallpaper" className="w-[150vw] md:w-[70vw] opacity-15 blur-[2px] grayscale-[30%] mix-blend-lighten z-0 object-contain" />
+        <img key={activeTeam} src={getTeamTheme(activeTeam).logo} alt="DAG Wallpaper" className="w-[150vw] md:w-[70vw] opacity-15 blur-[2px] grayscale-[30%] mix-blend-lighten z-0 object-contain" />
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
@@ -412,7 +413,7 @@ export default function AdminPage() {
             {TEAMS.map((team) => (
               <button key={team} onClick={() => { setActiveTeam(team); resetMatchForm(); }}
                 className={`px-6 py-2 rounded-full font-extrabold tracking-wider uppercase transition-colors border-2 ${
-                  activeTeam === team ? 'border-[#ec2b7a] bg-[#ec2b7a] text-white' : 'border-gray-800 bg-black/50 backdrop-blur text-gray-400 hover:border-gray-600'}`}>
+                  activeTeam === team ? 'border-accent bg-accent text-white' : 'border-gray-800 bg-black/50 backdrop-blur text-gray-400 hover:border-gray-600'}`}>
                 {team}
               </button>
             ))}
@@ -420,7 +421,7 @@ export default function AdminPage() {
         </div>
 
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-black uppercase tracking-wide bg-gradient-to-r from-[#ec2b7a] via-pink-300 to-white bg-clip-text text-transparent">Admin Panel</h1>
+          <h1 className="text-3xl md:text-4xl font-black uppercase tracking-wide bg-gradient-to-r from-accent via-pink-300 to-white bg-clip-text text-transparent">Admin Panel</h1>
           <p className="text-gray-500 text-sm mt-1 uppercase tracking-[0.3em]">{activeTeam}</p>
         </div>
 
@@ -429,7 +430,7 @@ export default function AdminPage() {
           {TABS.map((tab) => (
             <button key={tab} onClick={() => setActiveTab(tab)}
               className={`px-6 py-3 font-bold uppercase tracking-widest transition-colors whitespace-nowrap ${
-                activeTab === tab ? 'text-[#ec2b7a] border-b-2 border-[#ec2b7a]' : 'text-gray-500 hover:text-gray-300'}`}>
+                activeTab === tab ? 'text-accent border-b-2 border-accent' : 'text-gray-500 hover:text-gray-300'}`}>
               {tab === 'Matches' ? 'Match & Evaluations' : tab}
             </button>
           ))}
@@ -437,7 +438,7 @@ export default function AdminPage() {
 
         {activeTab === 'Guide' && (
           <div className="bg-[#1a1a1a]/80 backdrop-blur p-8 rounded-xl border border-gray-800 shadow-xl">
-            <h2 className="text-2xl font-extrabold text-[#ec2b7a] uppercase mb-4">Coach / Manager Guide</h2>
+            <h2 className="text-2xl font-extrabold text-accent uppercase mb-4">Coach / Manager Guide</h2>
             <div className="space-y-4 text-gray-300">
               <p><strong>1. Managing the Roster:</strong> Go to the Roster tab to add players or coaches. Make sure you are in the correct team view (Ladies or Montrix) before adding them.</p>
               <p><strong>2. Upcoming Matches Auto-Transfer:</strong> Any match scheduled in "Upcoming" will automatically transfer to "Matches" once the date passes. You can then click "Edit" on it to fill in the scores and player stats.</p>
@@ -452,7 +453,7 @@ export default function AdminPage() {
         {activeTab === 'Roster' && (
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 animate-fadeIn">
             <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 xl:col-span-1 h-fit shadow-xl">
-              <h3 className="font-bold text-[#ec2b7a] uppercase tracking-wider mb-4">Add New Member</h3>
+              <h3 className="font-bold text-accent uppercase tracking-wider mb-4">Add New Member</h3>
               <form onSubmit={handleAddPlayer} className="flex flex-col gap-3">
                 <input type="text" placeholder="IGN *" value={newIgn} onChange={(e) => setNewIgn(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none" required />
                 <select value={newRole} onChange={(e) => setNewRole(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none">
@@ -479,7 +480,7 @@ export default function AdminPage() {
             </div>
 
             <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 xl:col-span-2 shadow-xl">
-              <h3 className="font-bold text-[#ec2b7a] uppercase tracking-wider mb-4">Current Roster ({roster.length})</h3>
+              <h3 className="font-bold text-accent uppercase tracking-wider mb-4">Current Roster ({roster.length})</h3>
               {roster.length === 0 ? (
                 <p className="text-gray-500 italic text-sm">No members in roster.</p>
               ) : (
@@ -512,14 +513,14 @@ export default function AdminPage() {
                         <div className="flex justify-between items-center gap-3">
                           <div className="flex items-center gap-4">
                             {p.image_url ? (
-                              <img src={p.image_url} alt={p.ign} className="w-10 h-10 rounded-full object-cover object-top border border-[#ec2b7a] flex-shrink-0" />
+                              <img src={p.image_url} alt={p.ign} className="w-10 h-10 rounded-full object-cover object-top border border-accent flex-shrink-0" />
                             ) : (
-                              <div className="w-10 h-10 rounded-full bg-[#2a0a18] border border-[#ec2b7a] flex items-center justify-center flex-shrink-0">
+                              <div className="w-10 h-10 rounded-full bg-accent-deep border border-accent flex items-center justify-center flex-shrink-0">
                                 <span className="text-xs font-bold">{p.ign ? p.ign.charAt(0).toUpperCase() : '?'}</span>
                               </div>
                             )}
                             <div>
-                              <p className="font-bold">{p.ign} <span className="text-[#ec2b7a] text-xs ml-1">({p.role})</span></p>
+                              <p className="font-bold">{p.ign} <span className="text-accent text-xs ml-1">({p.role})</span></p>
                               <p className="text-xs text-gray-400">{p.full_name || 'No Name'} {(calcAge(p.date_of_birth) ?? p.age) ? `· ${calcAge(p.date_of_birth) ?? p.age}y` : ''} {p.stay ? `· ${p.stay}` : ''}</p>
                               {p.mlbb_id && <p className="text-[10px] text-gray-500">MLBB {p.mlbb_id}{p.mlbb_server ? ` (${p.mlbb_server})` : ''}</p>}
                             </div>
@@ -541,7 +542,7 @@ export default function AdminPage() {
         {activeTab === 'Upcoming' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn">
             <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 h-fit shadow-xl">
-              <h3 className="font-bold text-[#ec2b7a] uppercase mb-4">Schedule Upcoming Match</h3>
+              <h3 className="font-bold text-accent uppercase mb-4">Schedule Upcoming Match</h3>
               <form onSubmit={handleAddUpcomingMatch} className="flex flex-col gap-3">
                 <div className="flex gap-3">
                   <input type="date" value={upDate} onChange={(e) => setUpDate(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none w-1/2" required />
@@ -559,13 +560,13 @@ export default function AdminPage() {
             </div>
 
             <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 shadow-xl">
-              <h3 className="font-bold text-[#ec2b7a] uppercase mb-4">Scheduled Matches</h3>
+              <h3 className="font-bold text-accent uppercase mb-4">Scheduled Matches</h3>
               <div className="flex flex-col gap-3">
                 {upcomingMatchesList.length === 0 && <p className="text-gray-500 italic text-sm">No scheduled matches.</p>}
                 {upcomingMatchesList.map((m) => (
                   <div key={m.id} className="bg-[#121212] border border-gray-800 p-4 rounded flex justify-between items-center">
                     <div>
-                      <p className="text-[#ec2b7a] text-xs font-bold">{m.match_date}{m.match_time ? ` · ${formatTime(m.match_time)}` : ''}</p>
+                      <p className="text-accent text-xs font-bold">{m.match_date}{m.match_time ? ` · ${formatTime(m.match_time)}` : ''}</p>
                       <p className="font-bold">DAG vs {m.opponent_name} <span className="text-gray-500 text-xs ml-2 font-normal bg-gray-900 px-2 py-0.5 rounded">{m.match_type}</span></p>
                     </div>
                     <button onClick={() => deleteRecord('matches', m.id)} className="bg-red-900 text-red-300 text-xs px-3 py-1.5 rounded">Delete</button>
@@ -579,7 +580,7 @@ export default function AdminPage() {
         {activeTab === 'Achievements' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn">
             <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 h-fit shadow-xl">
-              <h3 className="font-bold text-[#ec2b7a] uppercase mb-4">Add Team Achievement</h3>
+              <h3 className="font-bold text-accent uppercase mb-4">Add Team Achievement</h3>
               <form onSubmit={handleAddAchievement} className="flex flex-col gap-3">
                 <input type="date" value={achDate} onChange={(e) => setAchDate(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" required />
                 <input type="text" placeholder="Placement (e.g. Champion, 1st Runner Up)" value={achPlacement} onChange={(e) => setAchPlacement(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" required />
@@ -590,7 +591,7 @@ export default function AdminPage() {
             </div>
 
             <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 shadow-xl">
-              <h3 className="font-bold text-[#ec2b7a] uppercase mb-4">Past Achievements</h3>
+              <h3 className="font-bold text-accent uppercase mb-4">Past Achievements</h3>
               <div className="flex flex-col gap-3">
                 {achievements.length === 0 && <p className="text-gray-500 italic text-sm">No achievements yet.</p>}
                 {achievements.map((a) => (
@@ -615,7 +616,7 @@ export default function AdminPage() {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn">
             <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 shadow-xl">
               <div className="flex justify-between items-center mb-4">
-                <h3 className="font-bold text-[#ec2b7a] uppercase">{editingMatchId ? 'Edit Match Record' : 'Log Completed Match'}</h3>
+                <h3 className="font-bold text-accent uppercase">{editingMatchId ? 'Edit Match Record' : 'Log Completed Match'}</h3>
                 {editingMatchId && <button onClick={resetMatchForm} className="text-xs bg-gray-700 px-2 py-1 rounded hover:bg-gray-600">Cancel Edit</button>}
               </div>
               <form onSubmit={handleSaveMatch} className="flex flex-col gap-4">
@@ -653,9 +654,9 @@ export default function AdminPage() {
                       if (!pm) return null;
                       const isStaffMember = ['coach', 'manager'].includes((p.role || '').toLowerCase());
                       return (
-                        <div key={p.id} className={`bg-[#121212] p-3 border rounded ${pm.status !== '' ? 'border-[#ec2b7a]' : 'border-gray-800'}`}>
+                        <div key={p.id} className={`bg-[#121212] p-3 border rounded ${pm.status !== '' ? 'border-accent' : 'border-gray-800'}`}>
                           <div className="flex items-center justify-between gap-2">
-                            <span className="font-bold text-sm">{p.ign} <span className="text-[#ec2b7a] text-xs">({p.role})</span></span>
+                            <span className="font-bold text-sm">{p.ign} <span className="text-accent text-xs">({p.role})</span></span>
                             <select
                               value={pm.status}
                               onChange={(e) => updatePlayerMatch(p.id, 'status', e.target.value)}
@@ -680,10 +681,10 @@ export default function AdminPage() {
                                 <input type="number" placeholder="A" value={pm.assists} onChange={(e) => updatePlayerMatch(p.id, 'assists', e.target.value)} className="bg-[#1a1a1a] border border-gray-700 rounded p-1 text-center text-xs" title="Assists" />
                               </div>
                               <div className="grid grid-cols-4 gap-1 mb-2 text-center text-[10px] text-gray-400">
-                                <div>Macro<input type="range" min="1" max="5" value={pm.macro} onChange={(e) => updatePlayerMatch(p.id, 'macro', Number(e.target.value))} className="w-full accent-[#ec2b7a]" /><span>{pm.macro}</span></div>
-                                <div>Micro<input type="range" min="1" max="5" value={pm.micro} onChange={(e) => updatePlayerMatch(p.id, 'micro', Number(e.target.value))} className="w-full accent-[#ec2b7a]" /><span>{pm.micro}</span></div>
-                                <div>KDA<input type="range" min="1" max="5" value={pm.kda_score} onChange={(e) => updatePlayerMatch(p.id, 'kda_score', Number(e.target.value))} className="w-full accent-[#ec2b7a]" /><span>{pm.kda_score}</span></div>
-                                <div>Mental<input type="range" min="1" max="5" value={pm.mentality} onChange={(e) => updatePlayerMatch(p.id, 'mentality', Number(e.target.value))} className="w-full accent-[#ec2b7a]" /><span>{pm.mentality}</span></div>
+                                <div>Macro<input type="range" min="1" max="5" value={pm.macro} onChange={(e) => updatePlayerMatch(p.id, 'macro', Number(e.target.value))} className="w-full accent-accent" /><span>{pm.macro}</span></div>
+                                <div>Micro<input type="range" min="1" max="5" value={pm.micro} onChange={(e) => updatePlayerMatch(p.id, 'micro', Number(e.target.value))} className="w-full accent-accent" /><span>{pm.micro}</span></div>
+                                <div>KDA<input type="range" min="1" max="5" value={pm.kda_score} onChange={(e) => updatePlayerMatch(p.id, 'kda_score', Number(e.target.value))} className="w-full accent-accent" /><span>{pm.kda_score}</span></div>
+                                <div>Mental<input type="range" min="1" max="5" value={pm.mentality} onChange={(e) => updatePlayerMatch(p.id, 'mentality', Number(e.target.value))} className="w-full accent-accent" /><span>{pm.mentality}</span></div>
                               </div>
                               <input type="text" placeholder="Individual feedback..." value={pm.comment} onChange={(e) => updatePlayerMatch(p.id, 'comment', e.target.value)} className="w-full bg-[#1a1a1a] border border-gray-700 rounded p-2 text-xs outline-none" />
                             </div>
@@ -714,21 +715,21 @@ export default function AdminPage() {
                   </div>
                 </div>
 
-                <button type="submit" disabled={submitting} className={`${editingMatchId ? 'bg-blue-600 hover:bg-blue-500' : 'bg-[#ec2b7a] hover:bg-[#c92468]'} text-white font-extrabold uppercase py-3 rounded mt-2`}>
+                <button type="submit" disabled={submitting} className={`${editingMatchId ? 'bg-blue-600 hover:bg-blue-500' : 'bg-accent hover:bg-accent-dark'} text-white font-extrabold uppercase py-3 rounded mt-2`}>
                   {submitting ? 'Saving...' : editingMatchId ? 'Update Match Record' : 'Publish Match Record'}
                 </button>
               </form>
             </div>
 
             <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 shadow-xl">
-              <h3 className="font-bold text-[#ec2b7a] uppercase mb-4">Matches (Click to Edit)</h3>
+              <h3 className="font-bold text-accent uppercase mb-4">Matches (Click to Edit)</h3>
               <div className="flex flex-col gap-3 max-h-[700px] overflow-y-auto pr-2">
                 {completedMatches.length === 0 && <p className="text-gray-500 italic text-sm">No matches recorded.</p>}
                 {completedMatches.map((m) => (
                   <div key={m.id} className="bg-[#121212] border border-gray-800 p-4 rounded flex justify-between items-center group">
                     <div className="cursor-pointer flex-1" onClick={() => startEditMatch(m)}>
                       <div className="flex items-center gap-2 mb-0.5">
-                        <p className="text-xs text-gray-500 group-hover:text-[#ec2b7a] transition-colors">{m.match_date}</p>
+                        <p className="text-xs text-gray-500 group-hover:text-accent transition-colors">{m.match_date}</p>
                         <p className="text-[9px] bg-gray-800 text-gray-300 px-1.5 py-0.5 rounded font-bold uppercase">{m.match_type || 'Scrim'}</p>
                       </div>
                       <p className="font-bold">DAG vs {m.opponent_name} <span className="text-gray-400">({m.dag_score}-{m.opponent_score})</span></p>

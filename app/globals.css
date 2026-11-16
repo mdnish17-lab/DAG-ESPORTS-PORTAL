@@ -16,11 +16,24 @@
   }
 }
 
-/* ===== Base ===== */
+/* ===== Team theme colors (set per team on <main>; these are the defaults) ===== */
 :root {
-  --dag-pink: #ec2b7a;
+  --accent-color: #c8196b;
+  --accent-dark: #9e1254;
+  --accent-deep: #2a0a18;
+  --accent-glow: rgba(200, 25, 107, 0.55);
+  --accent-glow-soft: rgba(200, 25, 107, 0.22);
   --dag-bg: #0a0508;
 }
+
+/* Lets you use bg-accent, text-accent, border-accent/50, from-accent ... */
+@theme inline {
+  --color-accent: var(--accent-color);
+  --color-accent-dark: var(--accent-dark);
+  --color-accent-deep: var(--accent-deep);
+}
+
+/* ===== Base ===== */
 
 html {
   color-scheme: dark;
@@ -35,7 +48,7 @@ body {
 }
 
 ::selection {
-  background: var(--dag-pink);
+  background: var(--accent-color);
   color: #ffffff;
 }
 
@@ -60,7 +73,7 @@ body {
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--dag-pink);
+  background: var(--accent-color);
 }
 
 /* ===== Date inputs: make the calendar icon visible on dark ===== */
@@ -71,7 +84,7 @@ input[type="time"] {
 
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {
-  filter: invert(36%) sepia(95%) saturate(2800%) hue-rotate(310deg) brightness(100%);
+  filter: invert(60%) sepia(60%) saturate(2200%) hue-rotate(305deg) brightness(105%);
   cursor: pointer;
   opacity: 0.9;
 }
@@ -85,8 +98,8 @@ input[type="time"]::-webkit-calendar-picker-indicator:hover {
 input:focus,
 select:focus,
 textarea:focus {
-  border-color: var(--dag-pink) !important;
-  box-shadow: 0 0 0 1px rgba(236, 43, 122, 0.35);
+  border-color: var(--accent-color) !important;
+  box-shadow: 0 0 0 1px var(--accent-glow-soft);
 }
 
 select option {
