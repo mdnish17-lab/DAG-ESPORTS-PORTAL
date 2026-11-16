@@ -170,7 +170,6 @@ export default function AdminPage() {
       .order('date', { ascending: false });
     if (aErr) console.error('Achievements error:', aErr);
     setAchievements(ach || []);
-
   }
 
   const completedMatches = allMatches.filter((m) => m.status === 'completed');
@@ -307,8 +306,16 @@ export default function AdminPage() {
     e.preventDefault();
     setSubmitting(true);
     const { error } = await supabase.from('matches').insert({
-      team: activeTeam, status: 'upcoming', match_type: upMatchType,
-      match_date: upDate, match_time: upTime || null, opponent_name: upOpponent.trim(), opponent_logo: upLogo.trim() || null,
+      team: activeTeam, 
+      status: 'upcoming', 
+      match_type: upMatchType,
+      match_date: upDate, 
+      match_time: upTime || null, 
+      opponent_name: upOpponent.trim(), 
+      opponent_logo: upLogo.trim() || null,
+      dag_score: 0,
+      opponent_score: 0,
+      result: 'PENDING'
     });
     setSubmitting(false);
     if (error) { alert('Failed to schedule match: ' + error.message); return; }
@@ -321,7 +328,12 @@ export default function AdminPage() {
     e.preventDefault();
     setSubmitting(true);
     const { data, error } = await supabase.from('team_achievements').insert({
-      team: activeTeam, date: achDate, placement: achPlacement, tournament: achTournament.trim(), venue: achVenue.trim() || null, image_url: achImage,
+      team: activeTeam, 
+      date: achDate, 
+      placement: achPlacement, 
+      tournament: achTournament.trim(), 
+      venue: achVenue.trim() || null, 
+      image_url: achImage.trim() || null,
     }).select();
     setSubmitting(false);
     if (error) {
@@ -589,7 +601,7 @@ export default function AdminPage() {
                 <input type="text" placeholder="Placement (e.g. Champion, 1st Runner Up)" value={achPlacement} onChange={(e) => setAchPlacement(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" required />
                 <input type="text" placeholder="Tournament Name" value={achTournament} onChange={(e) => setAchTournament(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" required />
                 <input type="text" placeholder="Venue (e.g. Kuala Lumpur, Online)" value={achVenue} onChange={(e) => setAchVenue(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" />
-                <input type="text" placeholder="Achievement Image URL" value={achImage} onChange={(e) => setAchImage(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" required />
+                <input type="text" placeholder="Achievement Image URL (Optional)" value={achImage} onChange={(e) => setAchImage(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" />
                 <button type="submit" disabled={submitting} className="bg-yellow-700 hover:bg-yellow-600 font-bold uppercase py-2 rounded mt-2 text-white">Save Achievement</button>
               </form>
             </div>
