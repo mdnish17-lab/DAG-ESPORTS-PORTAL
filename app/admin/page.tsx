@@ -101,7 +101,8 @@ export default function AdminPage() {
 
   // --- Achievement Form State ---
   const [achDate, setAchDate] = useState('');
-  const [achPlacement, setAchPlacement] = useState('');
+  const [achPlacement, setAchPlacement] = useState('Champion');
+  const [customPlacement, setCustomPlacement] = useState('');
   const [achTournament, setAchTournament] = useState('');
   const [achVenue, setAchVenue] = useState('');
   const [achImage, setAchImage] = useState('');
@@ -326,18 +327,27 @@ export default function AdminPage() {
 
   async function handleAddAchievement(e: React.FormEvent) {
     e.preventDefault();
+    
+    // Determine which placement text to send to the database
+    const finalPlacement = achPlacement === 'Others' ? customPlacement.trim() : achPlacement;
+    if (!finalPlacement) {
+      alert('Please specify the placement.');
+      return;
+    }
+
     setSubmitting(true);
     const { data, error } = await supabase.from('team_achievements').insert({
       team: activeTeam, 
       date: achDate, 
-      placement: achPlacement, 
+      placement: finalPlacement, 
       tournament: achTournament.trim(), 
       venue: achVenue.trim() || null, 
       image_url: achImage.trim() || null,
     }).select();
     setSubmitting(false);
+    
     if (error) {
-      alert('FAILED to add achievement:\n\n' + error.message + '\n\n(code: ' + (error.code || 'unknown') + ')\nTeam used: "' + activeTeam + '"');
+      alert('FAILED to add achievement:\n\n' + error.message);
       return;
     }
     if (!data || data.length === 0) {
@@ -345,7 +355,7 @@ export default function AdminPage() {
       return;
     }
     alert('Achievement added successfully!');
-    setAchDate(''); setAchPlacement(''); setAchTournament(''); setAchVenue(''); setAchImage('');
+    setAchDate(''); setAchPlacement('Champion'); setCustomPlacement(''); setAchTournament(''); setAchVenue(''); setAchImage('');
     loadData();
   }
 
@@ -598,7 +608,20 @@ export default function AdminPage() {
               <h3 className="font-bold text-accent uppercase mb-4">Add Team Achievement</h3>
               <form onSubmit={handleAddAchievement} className="flex flex-col gap-3">
                 <input type="date" value={achDate} onChange={(e) => setAchDate(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" required />
-                <input type="text" placeholder="Placement (e.g. Champion, 1st Runner Up)" value={achPlacement} onChange={(e) => setAchPlacement(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" required />
+                
+                <div className="flex gap-3">
+                  <select value={achPlacement} onChange={(e) => setAchPlacement(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none flex-1 text-sm">
+                    <option value="Champion">Champion</option>
+                    <option value="2nd Place">2nd Place</option>
+                    <option value="3rd Place">3rd Place</option>
+                    <option value="4th Place">4th Place</option>
+                    <option value="Others">Others (Type your own)...</option>
+                  </select>
+                  {achPlacement === 'Others' && (
+                    <input type="text" placeholder="Type placement *" value={customPlacement} onChange={(e) => setCustomPlacement(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none flex-1 text-sm" required />
+                  )}
+                </div>
+
                 <input type="text" placeholder="Tournament Name" value={achTournament} onChange={(e) => setAchTournament(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" required />
                 <input type="text" placeholder="Venue (e.g. Kuala Lumpur, Online)" value={achVenue} onChange={(e) => setAchVenue(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" />
                 <input type="text" placeholder="Achievement Image URL (Optional)" value={achImage} onChange={(e) => setAchImage(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" />
