@@ -31,6 +31,18 @@ const formatTime = (t: string) => {
   return `${hour % 12 || 12}:${m} ${hour >= 12 ? 'PM' : 'AM'}`;
 };
 
+// Age calculated from date of birth (YYYY-MM-DD)
+const calcAge = (dob: string): number | null => {
+  if (!dob) return null;
+  const d = new Date(dob);
+  if (isNaN(d.getTime())) return null;
+  const t = new Date();
+  let a = t.getFullYear() - d.getFullYear();
+  const m = t.getMonth() - d.getMonth();
+  if (m < 0 || (m === 0 && t.getDate() < d.getDate())) a--;
+  return a >= 0 ? a : null;
+};
+
 // Throws a readable error if a Supabase call failed
 function check(res: { error: any }, label: string) {
   if (res.error) throw new Error(`${label}: ${res.error.message} (${res.error.code ?? ''})`);
@@ -340,7 +352,7 @@ export default function AdminPage() {
     const { error } = await supabase.from('players').insert({
       team: activeTeam, ign: newIgn.trim(), role: newRole,
       main_hero: newMainHero.trim() || null, image_url: newImageUrl.trim() || null,
-      full_name: newFullName.trim() || null, age: newAge ? Number(newAge) : null,
+      full_name: newFullName.trim() || null, age: newDob ? calcAge(newDob) : newAge ? Number(newAge) : null,
       stay: newStay.trim() || null, achievements: newAchievements.trim() || null,
       date_of_birth: newDob || null, mlbb_id: newMlbbId.trim() || null, mlbb_server: newServer.trim() || null,
     });
@@ -376,7 +388,7 @@ export default function AdminPage() {
     const { error } = await supabase.from('players').update({
       ign: editForm.ign.trim(), role: editForm.role, main_hero: editForm.main_hero.trim() || null,
       image_url: editForm.image_url.trim() || null, full_name: editForm.full_name.trim() || null,
-      age: editForm.age ? Number(editForm.age) : null, stay: editForm.stay.trim() || null,
+      age: editForm.date_of_birth ? calcAge(editForm.date_of_birth) : editForm.age ? Number(editForm.age) : null, stay: editForm.stay.trim() || null,
       achievements: editForm.achievements.trim() || null,
       date_of_birth: editForm.date_of_birth || null, mlbb_id: editForm.mlbb_id.trim() || null, mlbb_server: editForm.mlbb_server.trim() || null,
     }).eq('id', id);
@@ -447,7 +459,7 @@ export default function AdminPage() {
                   {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                 </select>
                 <input type="text" placeholder="Full Name" value={newFullName} onChange={(e) => setNewFullName(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none" />
-                <input type="number" placeholder="Age" value={newAge} onChange={(e) => setNewAge(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none" />
+                <input type="number" placeholder="Age (auto from birth date)" value={newDob ? String(calcAge(newDob) ?? '') : newAge} onChange={(e) => setNewAge(e.target.value)} disabled={!!newDob} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none disabled:opacity-60 disabled:cursor-not-allowed" />
                 <div>
                   <label className="text-[10px] text-gray-500 uppercase tracking-wider">Date of Birth</label>
                   <input type="date" value={newDob} onChange={(e) => setNewDob(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none w-full mt-1" />
@@ -482,7 +494,7 @@ export default function AdminPage() {
                               {ROLES.map((r) => <option key={r} value={r}>{r}</option>)}
                             </select>
                             <input type="text" value={editForm.full_name} onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="Full Name" />
-                            <input type="number" value={editForm.age} onChange={(e) => setEditForm({ ...editForm, age: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="Age" />
+                            <input type="number" value={editForm.date_of_birth ? String(calcAge(editForm.date_of_birth) ?? '') : editForm.age} onChange={(e) => setEditForm({ ...editForm, age: e.target.value })} disabled={!!editForm.date_of_birth} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs disabled:opacity-60 disabled:cursor-not-allowed" placeholder="Age (auto)" />
                             <input type="text" value={editForm.stay} onChange={(e) => setEditForm({ ...editForm, stay: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="Stay" />
                             <input type="text" value={editForm.main_hero} onChange={(e) => setEditForm({ ...editForm, main_hero: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="Signature Hero" />
                             <input type="text" value={editForm.image_url} onChange={(e) => setEditForm({ ...editForm, image_url: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs col-span-2" placeholder="Image URL" />
@@ -508,7 +520,7 @@ export default function AdminPage() {
                             )}
                             <div>
                               <p className="font-bold">{p.ign} <span className="text-[#ec2b7a] text-xs ml-1">({p.role})</span></p>
-                              <p className="text-xs text-gray-400">{p.full_name || 'No Name'} {p.age ? `· ${p.age}y` : ''} {p.stay ? `· ${p.stay}` : ''}</p>
+                              <p className="text-xs text-gray-400">{p.full_name || 'No Name'} {(calcAge(p.date_of_birth) ?? p.age) ? `· ${calcAge(p.date_of_birth) ?? p.age}y` : ''} {p.stay ? `· ${p.stay}` : ''}</p>
                               {p.mlbb_id && <p className="text-[10px] text-gray-500">MLBB {p.mlbb_id}{p.mlbb_server ? ` (${p.mlbb_server})` : ''}</p>}
                             </div>
                           </div>
