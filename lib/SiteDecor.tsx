@@ -1,5 +1,7 @@
 "use client";
 
+import { usePathname } from 'next/navigation';
+
 // Decorations shared by every page:
 //  - "DAG ESPORTS" text repeating down both sides of the screen (scrolls top -> bottom)
 //  - "Made by NishiKudo" credit fixed in the viewport on every page
@@ -38,6 +40,8 @@ function Column({ flip }: { flip?: boolean }) {
 }
 
 export default function SiteDecor() {
+  const pathname = usePathname();
+  const hideAmbientBackground = pathname === '/planner' || pathname.startsWith('/planner/');
   return (
     <>
       <style>{`
@@ -46,12 +50,14 @@ export default function SiteDecor() {
       `}</style>
 
       {/* Subtle DAG emblem atmosphere behind page content; animations stop when reduced motion is preferred. */}
-      <div aria-hidden="true" className="dag-animated-background pointer-events-none fixed inset-0 z-[19] overflow-hidden select-none">
-        <div className="dag-ambient-glow dag-ambient-glow-left" />
-        <div className="dag-ambient-glow dag-ambient-glow-right" />
-        <div className="dag-background-logo" />
-        <div className="dag-background-ring" />
-      </div>
+      {!hideAmbientBackground && (
+        <div aria-hidden="true" className="dag-animated-background pointer-events-none fixed inset-0 z-[19] overflow-hidden select-none">
+          <div className="dag-ambient-glow dag-ambient-glow-left" />
+          <div className="dag-ambient-glow dag-ambient-glow-right" />
+          <div className="dag-background-logo" />
+          <div className="dag-background-ring" />
+        </div>
+      )}
 
       <div aria-hidden className="fixed inset-y-0 left-0 z-[25] w-5 overflow-hidden opacity-20 pointer-events-none select-none sm:w-10 md:w-14 md:opacity-25">
         <Column />
