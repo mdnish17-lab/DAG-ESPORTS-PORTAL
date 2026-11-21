@@ -2,19 +2,12 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import SiteDecor from '../../lib/SiteDecor';
+import TeamNavigation from '../../lib/TeamNavigation';
 import { getTeamTheme, themeStyle } from '../../lib/teamTheme';
 import { supabase } from '../../lib/supabase';
 import { useEffect, useState } from 'react';
 
 const TEAMS = ['DAG Ladies', 'DAG Montrix'];
-const NAV = [
-  { href: '/', label: 'Dashboard' },
-  { href: '/roster', label: 'Roster' },
-  { href: '/achievement', label: 'Achievement' },
-  { href: '/evaluation', label: 'Evaluation' },
-  { href: '/planner', label: 'Planner' },
-];
 const CURRENT = '/roster';
 
 const isStaff = (role: string) => {
@@ -41,7 +34,7 @@ export default function RosterPage() {
     let cancelled = false;
     async function fetchRoster() {
       setLoading(true);
-      const { data, error } = await supabase.from('public_player_profiles').select('id,team,ign,role,main_hero,image_url,achievements,full_name,stay,age').eq('team', activeTeam).order('id');
+      const { data, error } = await supabase.from('public_player_profiles').select('id,team,ign,role,image_url,achievements,full_name,stay,age').eq('team', activeTeam).order('id');
       if (error) console.error('Roster error:', error);
       if (cancelled) return;
       setRoster(data || []);
@@ -80,9 +73,6 @@ export default function RosterPage() {
             isStaffCard ? 'text-yellow-400 bg-yellow-600/20 border-yellow-600/50' : 'text-accent bg-accent/10 border-accent/40'}`}>
             {isStaffCard ? '★ ' : ''}{player.role}
           </span>
-          {!isStaffCard && (
-            <p className="text-gray-400 text-xs mb-3">Signature: <span className="text-gray-200 font-semibold">{player.main_hero || '—'}</span></p>
-          )}
           <span className={`text-[10px] font-bold uppercase tracking-wider ${expanded ? (isStaffCard ? 'text-yellow-400' : 'text-accent') : 'text-gray-500'}`}>
             {expanded ? '▲ Hide details' : '▼ Show details'}
           </span>
@@ -111,7 +101,6 @@ export default function RosterPage() {
 
   return (
     <main className="min-h-screen bg-[#0a0508] text-white flex flex-col items-center pt-10 md:pt-16 p-6 md:p-10 pb-20 relative overflow-hidden" style={themeStyle(activeTeam)}>
-      <SiteDecor />
       <div className="fixed inset-0 z-0 pointer-events-none flex items-center justify-center">
         <div className="absolute inset-0 bg-gradient-to-b from-[#121212]/90 via-[#121212]/80 to-[#121212] z-10"></div>
         <img key={activeTeam} src={getTeamTheme(activeTeam).logo} alt="DAG Wallpaper" className="w-[150vw] md:w-[70vw] opacity-15 blur-[2px] grayscale-[30%] mix-blend-lighten z-0 object-contain" />
@@ -134,19 +123,12 @@ export default function RosterPage() {
             <p className="text-xs tracking-[0.4em] text-gray-400 uppercase mb-2">De Ant Gaming</p>
             <h1 className="text-4xl md:text-6xl font-black uppercase leading-tight bg-gradient-to-r from-accent via-pink-300 to-white bg-clip-text text-transparent drop-shadow-lg">{activeTeam}</h1>
             <p className="text-gray-300 font-semibold tracking-widest uppercase text-sm mt-2">Roster</p>
-            <nav className="flex gap-2 flex-wrap items-center mt-6">
-              {NAV.map((n) =>
-                n.href === CURRENT ? (
-                  <span key={n.href} className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-accent text-white shadow-[0_0_15px_var(--accent-glow)]">{n.label}</span>
-                ) : (
-                  <Link key={n.href} href={n.href} className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider text-gray-300 border border-white/15 hover:border-accent hover:text-accent transition-colors">{n.label}</Link>
-                )
-              )}
-              <Link href="/admin" className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-white/10 hover:bg-white/20 text-white border border-white/10 transition-colors ml-1">Admin</Link>
-            </nav>
+
           </div>
           <Image key={activeTeam} src={getTeamTheme(activeTeam).logo} alt="DAG Logo" width={190} height={190} className="object-contain drop-shadow-2xl relative animate-fadeIn" />
         </div>
+
+        <TeamNavigation current={CURRENT} />
 
         {loading ? (
           <p className="text-gray-500 italic py-16 animate-pulse">Loading roster...</p>

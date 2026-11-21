@@ -37,7 +37,7 @@ export default function AdminLoginPage() {
         return;
       }
 
-      window.location.replace('/admin');
+      window.location.replace('/management');
     } catch {
       setMessage('Unable to connect. Please try again.');
     } finally {
@@ -71,8 +71,8 @@ export default function AdminLoginPage() {
 
         {message && <p role="alert" className="rounded-lg border border-red-400/30 bg-red-500/10 p-3 text-sm text-red-200">{message}</p>}
 
-        <button type="submit" disabled={busy} className="w-full rounded-xl bg-pink-500 px-4 py-3 font-black tracking-wide text-black transition hover:bg-pink-400 disabled:cursor-wait disabled:opacity-60">{busy ? 'CHECKING ACCOUNT...' : 'ACCESS ADMIN PANEL'}</button>
-        <Link href="/" className="block text-center text-sm font-semibold text-gray-400 hover:text-pink-300">← Back to Dashboard</Link>
+        <button type="submit" disabled={busy} className="w-full rounded-xl bg-pink-500 px-4 py-3 font-black tracking-wide text-black transition hover:bg-pink-400 disabled:cursor-wait disabled:opacity-60">{busy ? 'CHECKING ACCOUNT...' : 'ACCESS MANAGEMENT'}</button>
+        <Link href="/" className="block text-center text-sm font-semibold text-gray-400 hover:text-pink-300">← Back to DAG Home</Link>
       </form>
     </main>
   );

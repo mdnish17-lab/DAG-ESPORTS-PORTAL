@@ -2,12 +2,10 @@
 
 import Link from 'next/link';
 import AdminLogoutButton from './AdminLogoutButton';
-import AdminPasswordChange from './AdminPasswordChange';
 import PlayerEvaluationPanel from './PlayerEvaluationPanel';
 import MatchEvaluationTracker from './MatchEvaluationTracker';
 import CoachDashboard from './CoachDashboard';
 import WeeklyReportPanel from './WeeklyReportPanel';
-import SiteDecor from '../../lib/SiteDecor';
 import { getTeamTheme, themeStyle } from '../../lib/teamTheme';
 import { supabase } from '../../lib/supabase';
 import { useEffect, useState } from 'react';
@@ -15,7 +13,7 @@ import { useEffect, useState } from 'react';
 const ROLES = ['Coach', 'Manager', 'Midlaner', 'Jungler', 'Roamer', 'Goldlaner', 'Explaner'];
 const TEAMS = ['DAG Ladies', 'DAG Montrix'];
 const MATCH_TYPES = ['Scrim', 'Tournament', 'Scrim Bracket'];
-const TABS = ['Coach Dashboard', 'Guide', 'Roster', 'Match Log', 'Player Evaluation', 'Weekly Report', 'Upcoming', 'Achievements', 'Account'] as const;
+const TABS = ['Coach Dashboard', 'Guide', 'Roster', 'Match Log', 'Player Evaluation', 'Weekly Report', 'Upcoming', 'Achievements'] as const;
 
 // "18:30:00" -> "6:30 PM"
 const formatTime = (t: string) => {
@@ -398,17 +396,16 @@ export default function AdminPage() {
 
   return (
     <main className="min-h-screen bg-[#0a0508] text-white p-6 md:p-10 relative overflow-hidden" style={themeStyle(activeTeam)}>
-      <SiteDecor />
       <div className="fixed inset-0 z-0 pointer-events-none flex items-center justify-center">
         <div className="absolute inset-0 bg-gradient-to-b from-[#121212]/90 via-[#121212]/80 to-[#121212] z-10"></div>
         <img key={activeTeam} src={getTeamTheme(activeTeam).logo} alt="DAG Wallpaper" className="w-[150vw] md:w-[70vw] opacity-15 blur-[2px] grayscale-[30%] mix-blend-lighten z-0 object-contain" />
       </div>
 
       <div className="max-w-7xl mx-auto relative z-10">
-        {/* Navigation & Toggle */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8">
+        {/* Navigation is separate from the wallpaper/hero visual. */}
+        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 rounded-2xl border border-gray-800 bg-[#151015]/95 p-4 shadow-xl">
           <div className="flex items-center flex-wrap gap-3">
-            <Link href="/" className="bg-gray-800/80 backdrop-blur hover:bg-gray-700 px-4 py-2 rounded text-sm font-bold uppercase transition-colors">← Dashboard</Link>
+            <Link href="/management" className="bg-gray-800/80 backdrop-blur hover:bg-gray-700 px-4 py-2 rounded text-sm font-bold uppercase transition-colors">← Management</Link>
             <AdminLogoutButton />
           </div>
           <div className="flex gap-2">
@@ -423,12 +420,12 @@ export default function AdminPage() {
         </div>
 
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-black uppercase tracking-wide bg-gradient-to-r from-accent via-pink-300 to-white bg-clip-text text-transparent">Admin Panel</h1>
+          <h1 className="text-3xl md:text-4xl font-black uppercase tracking-wide bg-gradient-to-r from-accent via-pink-300 to-white bg-clip-text text-transparent">Coaches / Manager</h1>
           <p className="text-gray-500 text-sm mt-1 uppercase tracking-[0.3em]">{activeTeam} · {managementRole === 'none' ? 'Verifying role' : managementRole + ' access'}</p>
         </div>
 
         {/* Tab System */}
-        <div className="flex border-b border-gray-800 mb-8 overflow-x-auto">
+        <div className="flex border-b border-gray-800 mb-8 overflow-x-auto rounded-xl bg-[#151015]/95 p-2">
           {TABS.filter((tab) => tab !== 'Player Evaluation' || canEvaluate).map((tab) => (
             <button key={tab} onClick={() => { if (tab === 'Player Evaluation') { setFocusEvalMatchId(null); setEvalOpenVersion((n) => n + 1); } if (tab === 'Weekly Report') setReportFocus(null); setActiveTab(tab); }}
               className={`px-6 py-3 font-bold uppercase tracking-widest transition-colors whitespace-nowrap ${
@@ -458,12 +455,11 @@ export default function AdminPage() {
               <p><strong>6. Automatic Weekly Performance:</strong> Register each completed match first, then save each player evaluation in the separate tab. The public Evaluation graph automatically averages assessed matches by Monday–Sunday week. No separate Weekly KPI entry is needed. Existing historical reviews are kept as an archive.</p>
               <p><strong>7. Weekly Coach Reports:</strong> Approved coaches can write a weekly comment and next-week improvement goals for each player in Weekly Report. These notes appear on the public Evaluation page. Coach access must be enabled individually in Supabase.</p>
               <p><strong>8. Team Achievements:</strong> Add tournament placements in the Achievements tab to display them on the Achievement page.</p>
-              <p><strong>9. Password:</strong> Approved management users can change their own login password under Account.</p>
+              <p><strong>9. Account Settings:</strong> Manage your password from Management → Account Settings, outside the coaching workspace.</p>
             </div>
           </div>
         )}
 
-        {activeTab === 'Account' && <AdminPasswordChange />}
 
         {activeTab === 'Roster' && (
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 animate-fadeIn">

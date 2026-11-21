@@ -1,8 +1,8 @@
+import { redirect } from 'next/navigation';
 import { requireAdmin } from '../../lib/require-admin';
-import AdminClient from './AdminClient';
 
-// Only approved Supabase Auth users see the original management UI.
-export default async function AdminPage() {
+// Preserve legacy /admin links while sending approved users to Management.
+export default async function LegacyAdminRoute() {
   await requireAdmin();
-  return <AdminClient />;
+  redirect('/management');
 }
