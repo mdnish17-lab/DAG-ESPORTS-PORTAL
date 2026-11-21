@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
 import { getTeamTheme } from '../lib/teamTheme';
+import DagHomeNavigation from '../lib/DagHomeNavigation';
 
 type SiteProfile = {
   intro_title: string; intro_body: string;
@@ -87,12 +88,7 @@ export default function DagEsportsHome() {
           </div>
         </section>
 
-        <nav aria-label="DAG Esports home navigation" className="mt-4 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-[#130e14]/95 p-2.5 shadow-xl sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:p-3">
-          <a href="#about-owner" className="flex min-h-11 min-w-0 items-center justify-center rounded-xl border border-gray-700 px-2 py-2.5 text-center text-[11px] font-bold uppercase leading-tight text-gray-200 hover:border-pink-400 sm:px-4 sm:text-xs">Meet the Owner</a>
-          <a href="#dag-teams" className="flex min-h-11 min-w-0 items-center justify-center rounded-xl border border-gray-700 px-2 py-2.5 text-center text-[11px] font-bold uppercase leading-tight text-gray-200 hover:border-pink-400 sm:px-4 sm:text-xs">Team List</a>
-          <a href="#dag-hall-of-fame" className="flex min-h-11 min-w-0 items-center justify-center rounded-xl border border-gray-700 px-2 py-2.5 text-center text-[11px] font-bold uppercase leading-tight text-gray-200 hover:border-pink-400 sm:px-4 sm:text-xs">Hall of Fame</a>
-          <Link href="/management" className="flex min-h-11 min-w-0 items-center justify-center rounded-xl border border-pink-500/50 bg-pink-500/10 px-2 py-2.5 text-center text-[11px] font-black uppercase leading-tight text-pink-200 hover:bg-pink-500/20 sm:px-4 sm:text-xs">Management</Link>
-        </nav>
+        <DagHomeNavigation />
 
         <section id="about-owner" className="mt-12 scroll-mt-6 rounded-3xl border border-gray-800 bg-[#171218]/90 p-5 sm:p-8">
           <p className="text-xs font-black uppercase tracking-[0.25em] text-pink-400">Meet the leadership</p>
