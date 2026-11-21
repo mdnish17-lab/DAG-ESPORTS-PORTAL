@@ -2,13 +2,12 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import TeamNavigation from '../../lib/TeamNavigation';
+import DagHomeNavigation from '../../lib/DagHomeNavigation';
 import { getTeamTheme, themeStyle } from '../../lib/teamTheme';
 import { supabase } from '../../lib/supabase';
 import { useEffect, useRef, useState } from 'react';
 
 const TEAMS = ['DAG Ladies', 'DAG Montrix'];
-const CURRENT = '/planner';
 
 type Tool = 'move' | 'draw' | 'erase';
 type Token = { id: string; team: 'blue' | 'red'; label: string; role: string; x: number; y: number; visible: boolean };
@@ -244,7 +243,7 @@ export default function PlannerPage() {
           <Image key={activeTeam} src={getTeamTheme(activeTeam).logo} alt="DAG Logo" width={190} height={190} className="object-contain drop-shadow-2xl relative animate-fadeIn" />
         </div>
 
-        <TeamNavigation current={CURRENT} />
+        <DagHomeNavigation current="planner" />
 
         <div className="w-full grid grid-cols-1 lg:grid-cols-[64px_minmax(0,1fr)_320px] gap-4">
           {/* Toolbar */}
