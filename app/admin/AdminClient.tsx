@@ -154,7 +154,7 @@ export default function AdminPage() {
   }
 
   const completedMatches = allMatches.filter((m) => m.status === 'completed');
-  const upcomingMatchesList = allMatches.filter((m) => m.status === 'upcoming' || m.status === 'awaiting_result');
+  const upcomingMatchesList = allMatches.filter((m) => ['upcoming', 'awaiting_result', 'cancelled'].includes(m.status));
   const todayMY = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
   const result = (() => {
@@ -212,6 +212,16 @@ export default function AdminPage() {
     setEditingMatchId(null);
     setMatchDate(''); setMatchType('Scrim'); setOpponentName(''); setOpponentLogo('');
     setDagScore('0'); setOppScore('0'); setMatchReview(''); setMatchScreenshots('');
+  }
+
+  async function changeScheduledStatus(m: any, newStatus: 'awaiting_result' | 'cancelled' | 'upcoming') {
+    if (!canMatches) return;
+    const action = newStatus === 'cancelled' ? 'cancel' : newStatus === 'upcoming' ? 'restore' : 'mark as awaiting result';
+    if (!confirm(`Do you want to ${action} DAG vs ${m.opponent_name}?`)) return;
+    const { error } = await supabase.from('matches')
+      .update({ status: newStatus, result: 'PENDING' }).eq('id', m.id);
+    if (error) { alert('Could not update scheduled match: ' + error.message); return; }
+    void loadData();
   }
 
   // Called explicitly by management, never by the calendar or an automatic job.
@@ -575,15 +585,19 @@ export default function AdminPage() {
                       <p className="font-bold">DAG vs {m.opponent_name} <span className="text-gray-500 text-xs ml-2 font-normal bg-gray-900 px-2 py-0.5 rounded">{m.match_type}</span></p>
                     </div>
                     <div className="flex flex-col items-end gap-2">
-                      {m.match_date <= todayMY && (
-                        <span className="rounded border border-amber-800 bg-amber-950/25 px-2 py-1 text-[10px] font-bold text-amber-300">
-                          Awaiting confirmed result
-                        </span>
-                      )}
-                      {canMatches && <button type="button" onClick={() => { void finishScheduledMatch(m); }}
+                      <span className={`rounded border px-2 py-1 text-[10px] font-bold ${m.status === 'cancelled' ? 'border-gray-700 text-gray-400' : m.status === 'awaiting_result' || m.match_date <= todayMY ? 'border-amber-800 bg-amber-950/25 text-amber-300' : 'border-blue-800 text-blue-300'}`}>
+                        {m.status === 'cancelled' ? 'Cancelled' : m.status === 'awaiting_result' || m.match_date <= todayMY ? 'Awaiting confirmed result' : 'Scheduled'}
+                      </span>
+                      {canMatches && m.status !== 'cancelled' && <button type="button" onClick={() => { void finishScheduledMatch(m); }}
                         className="rounded bg-accent px-3 py-1.5 text-xs font-bold text-white hover:brightness-110">
                         Enter result
                       </button>}
+                      {canMatches && m.status === 'upcoming' && <button type="button" onClick={() => { void changeScheduledStatus(m, 'awaiting_result'); }}
+                        className="rounded border border-amber-800 px-3 py-1.5 text-xs font-bold text-amber-300">Mark awaiting result</button>}
+                      {canMatches && m.status !== 'cancelled' && <button type="button" onClick={() => { void changeScheduledStatus(m, 'cancelled'); }}
+                        className="rounded border border-gray-700 px-3 py-1.5 text-xs text-gray-300">Cancel match</button>}
+                      {canMatches && m.status === 'cancelled' && <button type="button" onClick={() => { void changeScheduledStatus(m, 'upcoming'); }}
+                        className="rounded border border-blue-800 px-3 py-1.5 text-xs text-blue-300">Restore</button>}
                       {canDeleteMatches && <button onClick={() => deleteRecord('matches', m.id)} className="bg-red-900 text-red-300 text-xs px-3 py-1.5 rounded">Delete</button>}
                     </div>
                   </div>
