@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { WEEKLY_METRICS, hasSixRatings, weightedScore, type WeeklyMetricKey } from '../../lib/weeklyKpi';
 import { getAssessmentProgressState, isStaffMember } from '../../lib/matchEvaluationProgress';
+import MobileKpiRating from './MobileKpiRating';
 
 type Attendance = '' | 'played' | 'bench' | 'absent';
 type ScoreField = WeeklyMetricKey;
@@ -53,11 +54,23 @@ export default function PlayerEvaluationPanel({ activeTeam, roster, matches, ini
   const [notice, setNotice] = useState('');
   const [error, setError] = useState('');
   const loadVersion = useRef(0);
+  const [savedAssessments, setSavedAssessments] = useState<Record<number, PlayerAssessment>>({});
+  const [nextAfterSave, setNextAfterSave] = useState(false);
+  const feedbackRef = useRef<HTMLDivElement>(null);
+  const formTopRef = useRef<HTMLDivElement>(null);
 
   const selectedMatch = matches.find((match) => match.id === matchId);
   const selectedPlayer = roster.find((player) => player.id === playerId);
   const assessment = selectedPlayer ? (assessments[selectedPlayer.id] || emptyAssessment()) : null;
   const trackedPlayers = roster.filter((player) => !isStaff(player));
+  const dirtyPlayers = roster.filter((player) => JSON.stringify(assessments[player.id] || emptyAssessment()) !== JSON.stringify(savedAssessments[player.id] || emptyAssessment()));
+  const hasUnsaved = dirtyPlayers.length > 0;
+  const currentDirty = selectedPlayer ? dirtyPlayers.some((player) => player.id === selectedPlayer.id) : false;
+  const validKpis = assessment ? WEEKLY_METRICS.filter((metric) => assessment[metric.key] != null).length : 0;
+  const nextPlayer = trackedPlayers.find((player, index) => {
+    const currentIndex = trackedPlayers.findIndex((item) => item.id === playerId);
+    return index === currentIndex + 1;
+  });
   const evaluatedCount = trackedPlayers.filter((player) =>
     assessments[player.id]?.id && getAssessmentProgressState(assessments[player.id]) === 'complete'
   ).length;
@@ -94,6 +107,7 @@ export default function PlayerEvaluationPanel({ activeTeam, roster, matches, ini
       };
     }
     setAssessments(states);
+    setSavedAssessments(structuredClone(states));
     setLoading(false);
   }, [roster]);
 
@@ -103,16 +117,19 @@ export default function PlayerEvaluationPanel({ activeTeam, roster, matches, ini
   }, [matchId, loadAssessments]);
 
   function selectMatch(id: number) {
+    if (saving || id === matchId) return;
+    if (hasUnsaved && !window.confirm('You have unsaved player ratings for this match. Switch matches and discard them?')) return;
     setMatchId(id);
     setPlayerId(null);
     setAssessments({});
+    setSavedAssessments({});
     setLoading(true);
     setNotice('');
     setError('');
   }
 
   function update(field: keyof PlayerAssessment, value: string | number | null) {
-    if (!selectedPlayer) return;
+    if (!selectedPlayer || saving) return;
     setAssessments((previous) => ({
       ...previous,
       [selectedPlayer.id]: { ...(previous[selectedPlayer.id] || emptyAssessment()), [field]: value },
@@ -120,7 +137,7 @@ export default function PlayerEvaluationPanel({ activeTeam, roster, matches, ini
     setNotice('');
   }
 
-  async function savePlayerAssessment() {
+  async function savePlayerAssessment(advance = false) {
     if (!selectedMatch || !selectedPlayer || !assessment) return;
     setError('');
     setNotice('');
@@ -161,6 +178,7 @@ export default function PlayerEvaluationPanel({ activeTeam, roster, matches, ini
         coach_comment: assessment.status === 'absent' ? null : assessment.comment.trim() || null,
         absent_reason: assessment.status === 'absent' ? assessment.absent_reason.trim() : null,
       };
+      let savedId = assessment.id;
       if (assessment.id != null) {
         const { data, error: updateError } = await supabase
           .from('match_player_stats').update(payload).eq('id', assessment.id).select('id');
@@ -172,24 +190,45 @@ export default function PlayerEvaluationPanel({ activeTeam, roster, matches, ini
           .insert({ ...payload, micro_score: 0, kda_score: 0, mentality_score: 0 })
           .select('id').single();
         if (insertError) throw insertError;
+        savedId = data.id;
         setAssessments((prev) => ({ ...prev, [selectedPlayer.id]: { ...assessment, id: data.id } }));
       }
+      setSavedAssessments((prev) => ({ ...prev, [selectedPlayer.id]: { ...assessment, id: savedId } }));
       setNotice(`${selectedPlayer.ign} saved for ${selectedMatch.opponent_name}. The public weekly chart will reflect the assessment.`);
+      if (advance && nextPlayer) {
+        setPlayerId(nextPlayer.id);
+        formTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else {
+        feedbackRef.current?.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : 'Could not save player evaluation.');
     } finally { setSaving(false); }
   }
 
   async function removeAssessment() {
-    if (!selectedPlayer || !assessment?.id) return;
+    if (!selectedPlayer || !assessment?.id || saving) return;
     if (!confirm(`Remove ${selectedPlayer.ign}'s participation record for this match?`)) return;
     setSaving(true);
     const { error: deleteError } = await supabase.from('match_player_stats').delete().eq('id', assessment.id);
     setSaving(false);
     if (deleteError) { setError(deleteError.message); return; }
     setAssessments((prev) => ({ ...prev, [selectedPlayer.id]: emptyAssessment() }));
+    setSavedAssessments((prev) => ({ ...prev, [selectedPlayer.id]: emptyAssessment() }));
     setNotice('Participation record removed.');
   }
+
+  // Native navigation guards protect against accidental browser refresh or tab close.
+  // Switching matches also asks for confirmation when unsaved edits exist.
+  useEffect(() => {
+    const warn = (event: BeforeUnloadEvent) => {
+      if (!hasUnsaved) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    window.addEventListener('beforeunload', warn);
+    return () => window.removeEventListener('beforeunload', warn);
+  }, [hasUnsaved]);
 
   return (
     <div className="animate-fadeIn space-y-7">
