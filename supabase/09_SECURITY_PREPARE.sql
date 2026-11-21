@@ -104,6 +104,7 @@ begin
     where conrelid='public.matches'::regclass and conname='dag_match_status_result_consistency') then
     alter table public.matches add constraint dag_match_status_result_consistency
       check (
+        status is not null and result is not null and (
         (status = 'completed' and dag_score is not null and opponent_score is not null
           and dag_score >= 0 and opponent_score >= 0
           and (
@@ -113,6 +114,7 @@ begin
           ))
         or
         (status in ('upcoming','awaiting_result','cancelled') and result = 'PENDING')
+        )
       ) not valid;
   end if;
 end $$;
