@@ -105,14 +105,14 @@ create policy dag_weekly_reports_public_read on public.weekly_player_reports for
 create policy dag_weekly_reports_insert on public.weekly_player_reports for insert
   to authenticated with check (
     (select public.can_manage_dag('edit_reports')) and
-    exists (select 1 from public.players p
+    exists (select 1 from public.public_player_profiles p
       where p.id = player_id and p.team = weekly_player_reports.team)
   );
 create policy dag_weekly_reports_update on public.weekly_player_reports for update
   to authenticated using ((select public.can_manage_dag('edit_reports')))
   with check (
     (select public.can_manage_dag('edit_reports')) and
-    exists (select 1 from public.players p
+    exists (select 1 from public.public_player_profiles p
       where p.id = player_id and p.team = weekly_player_reports.team)
   );
 create policy dag_weekly_reports_delete on public.weekly_player_reports for delete
