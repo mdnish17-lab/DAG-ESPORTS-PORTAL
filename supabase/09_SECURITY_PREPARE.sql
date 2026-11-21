@@ -91,6 +91,7 @@ grant select on public.public_player_profiles to anon, authenticated;
 grant select on public.public_match_player_stats to anon, authenticated;
 
 -- New statuses are prospective. NOT VALID keeps existing records intact.
+-- A second check rejects future inconsistent score/result combinations.
 -- Scores are not changed, and historical 0-0 DRAW records need manual review.
 do $$
 begin
@@ -98,6 +99,21 @@ begin
     where conrelid='public.matches'::regclass and conname='dag_match_status_values') then
     alter table public.matches add constraint dag_match_status_values
       check (status in ('upcoming','awaiting_result','completed','cancelled')) not valid;
+  end if;
+  if not exists (select 1 from pg_constraint
+    where conrelid='public.matches'::regclass and conname='dag_match_status_result_consistency') then
+    alter table public.matches add constraint dag_match_status_result_consistency
+      check (
+        (status = 'completed' and dag_score is not null and opponent_score is not null
+          and dag_score >= 0 and opponent_score >= 0
+          and (
+            (dag_score > opponent_score and result = 'WIN') or
+            (dag_score < opponent_score and result = 'LOSS') or
+            (dag_score = opponent_score and result = 'DRAW')
+          ))
+        or
+        (status in ('upcoming','awaiting_result','cancelled') and result = 'PENDING')
+      ) not valid;
   end if;
 end $$;
 
