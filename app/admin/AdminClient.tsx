@@ -403,15 +403,15 @@ export default function AdminPage() {
 
       <div className="max-w-7xl mx-auto relative z-10">
         {/* Navigation is separate from the wallpaper/hero visual. */}
-        <div className="flex flex-col md:flex-row justify-between items-center gap-4 mb-8 rounded-2xl border border-gray-800 bg-[#151015]/95 p-4 shadow-xl">
-          <div className="flex items-center flex-wrap gap-3">
+        <div className="flex flex-col md:flex-row justify-between items-stretch md:items-center gap-4 mb-8 rounded-2xl border border-gray-800 bg-[#151015]/95 p-3 shadow-xl sm:p-4">
+          <div className="flex flex-wrap items-center justify-between gap-2 sm:justify-start sm:gap-3">
             <Link href="/management" className="bg-gray-800/80 backdrop-blur hover:bg-gray-700 px-4 py-2 rounded text-sm font-bold uppercase transition-colors">← Management</Link>
             <AdminLogoutButton />
           </div>
-          <div className="flex gap-2">
+          <div className="grid grid-cols-2 gap-2 sm:flex">
             {TEAMS.map((team) => (
               <button key={team} onClick={() => { setActiveTeam(team); resetMatchForm(); setFocusEvalMatchId(null); setEvalOpenVersion((n) => n + 1); }}
-                className={`px-6 py-2 rounded-full font-extrabold tracking-wider uppercase transition-colors border-2 ${
+                className={`min-h-11 min-w-0 rounded-xl border-2 px-2 py-2 text-center text-[11px] font-extrabold uppercase leading-tight tracking-wide transition-colors sm:px-6 sm:text-sm ${
                   activeTeam === team ? 'border-accent bg-accent text-white' : 'border-gray-800 bg-black/50 backdrop-blur text-gray-400 hover:border-gray-600'}`}>
                 {team}
               </button>
@@ -425,11 +425,11 @@ export default function AdminPage() {
         </div>
 
         {/* Tab System */}
-        <div className="flex border-b border-gray-800 mb-8 overflow-x-auto rounded-xl bg-[#151015]/95 p-2">
+        <div role="tablist" aria-label="Coaching workspace tabs" className="mb-8 grid grid-cols-2 gap-2 rounded-xl border border-gray-800 bg-[#151015]/95 p-2 sm:grid-cols-3 lg:flex lg:flex-wrap">
           {TABS.filter((tab) => tab !== 'Player Evaluation' || canEvaluate).map((tab) => (
             <button key={tab} onClick={() => { if (tab === 'Player Evaluation') { setFocusEvalMatchId(null); setEvalOpenVersion((n) => n + 1); } if (tab === 'Weekly Report') setReportFocus(null); setActiveTab(tab); }}
-              className={`px-6 py-3 font-bold uppercase tracking-widest transition-colors whitespace-nowrap ${
-                activeTab === tab ? 'text-accent border-b-2 border-accent' : 'text-gray-500 hover:text-gray-300'}`}>
+              role="tab" aria-selected={activeTab === tab} className={`flex min-h-11 min-w-0 items-center justify-center rounded-lg border px-2 py-2.5 text-center text-[10px] font-bold uppercase leading-tight tracking-wide transition-colors sm:px-3 sm:text-xs lg:px-4 ${
+                activeTab === tab ? 'border-accent bg-accent/15 text-accent' : 'border-gray-700 bg-[#100e11] text-gray-400 hover:border-gray-500 hover:text-gray-200'}`}>
               {tab}
             </button>
           ))}
