@@ -4,6 +4,7 @@ import Link from 'next/link';
 import AdminLogoutButton from './AdminLogoutButton';
 import AdminPasswordChange from './AdminPasswordChange';
 import PlayerEvaluationPanel from './PlayerEvaluationPanel';
+import MatchEvaluationTracker from './MatchEvaluationTracker';
 import WeeklyReportPanel from './WeeklyReportPanel';
 import SiteDecor from '../../lib/SiteDecor';
 import { getTeamTheme, themeStyle } from '../../lib/teamTheme';
@@ -398,6 +399,7 @@ export default function AdminPage() {
               <p><strong>1. Managing the Roster:</strong> Go to Roster to add players or coaches. Make sure you are in the correct team view (Ladies or Montrix) before adding them.</p>
               <p><strong>2. Upcoming Matches Auto-Transfer:</strong> Upcoming matches are transferred to completed Match Log after their date passes. Review the score and match details there, then evaluate players in the separate Player Evaluation tab.</p>
               <p><strong>3. Player Attendance:</strong> In Player Evaluation, select an already registered match and mark each player (and coach / manager) as Played, Benched, or Absent. If someone is absent, you must write a short remark (e.g., "Sick", "Injury", "Personal"). Absent members do NOT count toward attendance rate.</p>
+              <p><strong>Evaluation Progress Tracker:</strong> In Match Log, check which matches still need player assessments. Select Continue evaluation to rate missing players. Benched and Absent statuses count as recorded; Played needs all six KPI scores.</p>
               <p><strong>4. Player Evaluation System:</strong> Choose a registered match and a player, then use the large 1–5 rating scales for all six coach-assessed KPIs: Mechanics, Macro, Communication, Role Execution, Discipline and Hero Pool. Ratings are weighted using the Excel workbook and combined with attendance for Overall Evaluation.</p>
               <p><strong>5. Management Attendance:</strong> Coach and Manager are marked Present or Absent in Player Evaluation (absence needs a remark). Their attendance percentage is shown on the Evaluation page. They are not rated.</p>
               <p><strong>6. Automatic Weekly Performance:</strong> Register each completed match first, then save each player evaluation in the separate tab. The public Evaluation graph automatically averages assessed matches by Monday–Sunday week. No separate Weekly KPI entry is needed. Existing historical reviews are kept as an archive.</p>
@@ -626,24 +628,9 @@ export default function AdminPage() {
                   </button>
                 </form>
               </div>
-              <div className="h-fit rounded-2xl border border-gray-800 bg-[#1a1a1a]/90 p-6 shadow-xl md:p-8">
-                <h3 className="mb-1 font-black uppercase text-accent">Registered Completed Matches</h3>
-                <p className="mb-5 text-xs text-gray-500">Choose Evaluate to open the large rating form for that match.</p>
-                <div className="flex max-h-[710px] flex-col gap-3 overflow-y-auto pr-1">
-                  {completedMatches.length === 0 && <p className="rounded-lg border border-dashed border-gray-700 p-5 text-sm text-gray-400">No completed matches yet.</p>}
-                  {completedMatches.map((m) => (
-                    <div key={m.id} className="rounded-xl border border-gray-800 bg-[#121212] p-4">
-                      <p className="text-xs text-gray-500">{m.match_date} · {m.match_type || 'Scrim'}</p>
-                      <p className="mt-1 font-black">DAG vs {m.opponent_name} <span className="text-gray-400">({m.dag_score}–{m.opponent_score})</span></p>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <button type="button" onClick={() => openMatchForEvaluation(m.id)} className="rounded-lg bg-accent px-4 py-2 text-xs font-black uppercase text-white hover:brightness-110">Evaluate Players</button>
-                        <button type="button" onClick={() => startEditMatch(m)} className="rounded-lg border border-gray-600 px-4 py-2 text-xs font-bold text-gray-200 hover:border-accent">Edit Match</button>
-                        <button type="button" onClick={() => deleteRecord('matches', m.id)} className="rounded-lg border border-red-900 px-4 py-2 text-xs font-bold text-red-300 hover:bg-red-950/30">Delete</button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              <MatchEvaluationTracker activeTeam={activeTeam} roster={roster} matches={completedMatches}
+                onEvaluate={openMatchForEvaluation} onEdit={startEditMatch}
+                onDelete={(id) => { void deleteRecord('matches', id); }} />
             </div>
           </div>
         )}
