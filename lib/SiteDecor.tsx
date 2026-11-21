@@ -47,6 +47,14 @@ export default function SiteDecor() {
         @media (prefers-reduced-motion: reduce) { .dag-fall { animation: none !important; } }
       `}</style>
 
+      {/* Subtle DAG emblem atmosphere behind page content; animations stop when reduced motion is preferred. */}
+      <div aria-hidden="true" className="dag-animated-background pointer-events-none fixed inset-0 z-0 overflow-hidden select-none">
+        <div className="dag-ambient-glow dag-ambient-glow-left" />
+        <div className="dag-ambient-glow dag-ambient-glow-right" />
+        <div className="dag-background-logo" />
+        <div className="dag-background-ring" />
+      </div>
+
       <div aria-hidden className="hidden md:block fixed inset-y-0 left-0 w-14 overflow-hidden z-[5] pointer-events-none opacity-20 select-none">
         <Column />
       </div>
