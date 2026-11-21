@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
+import CoachPlayerInformation from './CoachPlayerInformation';
 import { formatWeek } from '../../lib/weeklyKpi';
 import { lastCompletedWeekStart, makeCoachDashboardSummary, type CoachAssessmentRow, type CoachReportRow } from '../../lib/coachDashboard';
 import type { ProgressMatch, ProgressPlayer } from '../../lib/matchEvaluationProgress';
@@ -15,10 +16,11 @@ type Props = {
   onOpenReport: (playerId: number, weekStart: string) => void;
   onOpenReports: () => void;
   canEdit?: boolean;
+  managementRole: string;
 };
 const card = 'rounded-2xl border border-gray-800 bg-[#1a1a1a]/90 p-5 md:p-6';
 
-export default function CoachDashboard({ activeTeam, roster, matches, onEvaluateMatch, onOpenMatchLog, onOpenReport, onOpenReports, canEdit = true }: Props) {
+export default function CoachDashboard({ activeTeam, roster, matches, onEvaluateMatch, onOpenMatchLog, onOpenReport, onOpenReports, canEdit = true, managementRole }: Props) {
   const [assessmentRows, setAssessmentRows] = useState<CoachAssessmentRow[]>([]);
   const [reportRows, setReportRows] = useState<CoachReportRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -87,6 +89,8 @@ export default function CoachDashboard({ activeTeam, roster, matches, onEvaluate
             className="rounded-lg border border-gray-600 px-4 py-2 text-xs font-black uppercase text-gray-200 hover:border-accent disabled:opacity-50">Refresh data</button>
         </div>
       </header>
+
+      <CoachPlayerInformation activeTeam={activeTeam} managementRole={managementRole} />
 
       {loading ? <div role="status" className={card + ' text-sm text-gray-400'}>Loading coaching overview...</div>
       : error ? <div role="alert" className="rounded-xl border border-red-800 bg-red-950/25 p-5 text-sm text-red-300">
