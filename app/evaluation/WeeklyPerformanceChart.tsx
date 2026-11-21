@@ -8,6 +8,7 @@ import {
   type WeeklyMetricKey,
   type WeeklyReview,
 } from '../../lib/weeklyKpi';
+import { targetProgress, type ImprovementTarget } from '../../lib/improvementTargets';
 
 type SeriesKey = 'overall' | WeeklyMetricKey;
 type Props = {
@@ -15,6 +16,7 @@ type Props = {
   reviews: WeeklyReview[];
   loading: boolean;
   error: string;
+  targets?: ImprovementTarget[];
 };
 
 const WIDTH = 820;
@@ -26,7 +28,7 @@ const BOTTOM = 60;
 const PLOT_WIDTH = WIDTH - LEFT - RIGHT;
 const PLOT_HEIGHT = HEIGHT - TOP - BOTTOM;
 
-export default function WeeklyPerformanceChart({ playerName, reviews, loading, error }: Props) {
+export default function WeeklyPerformanceChart({ playerName, reviews, loading, error, targets = [] }: Props) {
   const [metric, setMetric] = useState<SeriesKey>('overall');
   const points = useMemo(() => [...reviews].sort((a, b) => a.week_start.localeCompare(b.week_start)).slice(-12), [reviews]);
   const selected = WEEKLY_METRICS.find((item) => item.key === metric);
@@ -38,6 +40,11 @@ export default function WeeklyPerformanceChart({ playerName, reviews, loading, e
   const improvement = latest !== null && previous !== null ? latest - previous : null;
   const xOf = (index: number) => LEFT + (points.length === 1 ? PLOT_WIDTH / 2 : index * PLOT_WIDTH / (points.length - 1));
   const yOf = (value: number) => TOP + ((5 - value) / 4) * PLOT_HEIGHT;
+  const metricTargets = targets
+    .filter((target) => metric !== 'overall' && target.metric_key === metric)
+    .sort((a, b) => a.week_start.localeCompare(b.week_start));
+  const goalOutcomes = metricTargets.map((target) => targetProgress(target, reviews));
+  const goalByWeek = new Map(metricTargets.map((target) => [target.week_start, target]));
   const coordinates = values.map((value, index) => `${xOf(index)},${yOf(value)}`).join(' ');
   const area = values.length ? `M ${xOf(0)},${TOP + PLOT_HEIGHT} L ${values.map((value, i) => `${xOf(i)},${yOf(value)}`).join(' L ')} L ${xOf(values.length - 1)},${TOP + PLOT_HEIGHT} Z` : '';
 
@@ -104,6 +111,15 @@ export default function WeeklyPerformanceChart({ playerName, reviews, loading, e
             <polyline points={coordinates} fill="none" stroke={color} strokeWidth="4" strokeLinejoin="round" strokeLinecap="round" />
             {points.map((review, index) => (
               <g key={review.id}>
+                {goalByWeek.get(review.week_start) && (
+                  <g>
+                    <line x1={xOf(index) - 19} x2={xOf(index) + 19}
+                      y1={yOf(Number(goalByWeek.get(review.week_start)!.target_score))}
+                      y2={yOf(Number(goalByWeek.get(review.week_start)!.target_score))}
+                      stroke="#facc15" strokeWidth="3" strokeDasharray="5 4" />
+                    <title>{'Target ' + Number(goalByWeek.get(review.week_start)!.target_score).toFixed(1) + '/5 · week of ' + formatWeek(review.week_start)}</title>
+                  </g>
+                )}
                 <circle cx={xOf(index)} cy={yOf(values[index])} r="7" fill={color} stroke="#150d18" strokeWidth="3">
                   <title>{`Week ${formatWeek(review.week_start)}: ${label} ${values[index].toFixed(2)}/5 (${review.match_count || 1} rated match${(review.match_count || 1) === 1 ? '' : 'es'})`}</title>
                 </circle>
@@ -116,6 +132,27 @@ export default function WeeklyPerformanceChart({ playerName, reviews, loading, e
             ))}
           </svg>
           <p className="mt-1 text-center text-[11px] text-gray-500">Last {points.length} assessed week{points.length === 1 ? '' : 's'} · Multiple assessed matches in a week are averaged · Empty weeks are not zero</p>
+          {metric !== 'overall' && metricTargets.some((goal) => points.some((p) => p.week_start === goal.week_start)) &&
+            <p className="mt-2 text-center text-xs text-amber-300">Yellow dashed marker = coach's weekly target</p>}
+        </div>
+      )}
+      {metric === 'overall' ? (
+        targets.length > 0 && <p className="mt-4 text-xs text-gray-400">Select one of the six KPI categories above to compare that metric against the coach's weekly improvement targets.</p>
+      ) : (
+        <div className="mt-4 space-y-2" aria-label="Weekly improvement target results">
+          <h5 className="text-xs font-black uppercase tracking-wider text-amber-300">{label} improvement targets</h5>
+          {goalOutcomes.length === 0 ? <p className="text-xs text-gray-400">No improvement target for this KPI yet.</p> :
+            goalOutcomes.slice(-12).map((goal) => (
+              <div key={goal.id} className="rounded-lg border border-amber-900/40 bg-black/25 px-3 py-2 text-xs">
+                <div className="flex flex-wrap justify-between gap-2">
+                  <span className="font-bold text-white">Week of {formatWeek(goal.week_start)} · Goal {Number(goal.target_score).toFixed(1)}/5</span>
+                  <span className={goal.status === 'achieved' ? 'text-green-300' : goal.status === 'below-target' ? 'text-amber-300' : 'text-gray-400'}>
+                    {goal.status === 'not-assessed' ? 'Not assessed' : goal.status === 'achieved' ? 'Achieved' : 'Below target'}
+                  </span>
+                </div>
+                <p className="mt-1 text-gray-400">Actual KPI: {goal.actual == null ? '—' : goal.actual.toFixed(2) + '/5'}{goal.focus_note ? ' · ' + goal.focus_note : ''}</p>
+              </div>
+            ))}
         </div>
       )}
       <p className="mt-4 text-xs text-gray-500">
