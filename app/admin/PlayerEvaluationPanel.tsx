@@ -66,10 +66,8 @@ export default function PlayerEvaluationPanel({ activeTeam, roster, matches, ini
   const hasUnsaved = dirtyPlayers.length > 0;
   const currentDirty = selectedPlayer ? dirtyPlayers.some((player) => player.id === selectedPlayer.id) : false;
   const validKpis = assessment ? WEEKLY_METRICS.filter((metric) => assessment[metric.key] != null).length : 0;
-  const nextPlayer = trackedPlayers.find((player, index) => {
-    const currentIndex = trackedPlayers.findIndex((item) => item.id === playerId);
-    return index === currentIndex + 1;
-  });
+  const currentPlayerPosition = trackedPlayers.findIndex((item) => item.id === playerId);
+  const nextPlayer = currentPlayerPosition >= 0 ? trackedPlayers[currentPlayerPosition + 1] : null;
   const evaluatedCount = trackedPlayers.filter((player) =>
     assessments[player.id]?.id && getAssessmentProgressState(assessments[player.id]) === 'complete'
   ).length;
@@ -327,6 +325,22 @@ export default function PlayerEvaluationPanel({ activeTeam, roster, matches, ini
                     </label>
                   </div>
 
+                  <div className="mb-5 grid grid-cols-3 gap-2 sm:hidden" aria-label="Quick attendance selection">
+                    {([
+                      ['played', isStaff(selectedPlayer) ? 'Present' : 'Played'],
+                      ...(!isStaff(selectedPlayer) ? [['bench', 'Benched']] : []),
+                      ['absent', 'Absent'],
+                    ] as [Attendance, string][]).map(([status, label]) => (
+                      <button key={status} type="button" onClick={() => update('status', status)}
+                        aria-pressed={assessment.status === status} disabled={saving}
+                        className={`min-h-12 rounded-xl border px-2 text-sm font-bold disabled:opacity-50 ${assessment.status === status
+                          ? 'border-accent bg-accent/20 text-white'
+                          : 'border-gray-700 bg-[#101010] text-gray-300'}`}>
+                        {label}
+                      </button>
+                    ))}
+                  </div>
+
                   {assessment.status === 'played' && !isStaff(selectedPlayer) && (
                     <div className="space-y-6">
                       <div>
@@ -381,6 +395,8 @@ export default function PlayerEvaluationPanel({ activeTeam, roster, matches, ini
                     {assessment.id && <button type="button" onClick={removeAssessment} disabled={saving} className="rounded-xl border border-red-800 px-5 py-3 text-sm font-bold text-red-300 hover:bg-red-950/30">Remove participation record</button>}
                   </div>
                   <div className="fixed inset-x-0 bottom-0 z-40 border-t border-accent/40 bg-[#130d13]/95 px-4 pb-[max(0.75rem,env(safe-area-inset-bottom))] pt-3 shadow-[0_-10px_28px_rgba(0,0,0,0.5)] backdrop-blur sm:hidden">
+                    {error && <p role="alert" className="mx-auto mb-2 max-w-lg text-xs font-bold text-red-300">{error}</p>}
+                    {notice && <p role="status" className="mx-auto mb-2 max-w-lg text-xs font-bold text-green-300">{notice}</p>}
                     <div className="mx-auto flex max-w-lg items-center gap-2">
                       <div className="min-w-0 flex-1">
                         <p className="truncate text-xs font-black text-white">{selectedPlayer.ign}</p>
