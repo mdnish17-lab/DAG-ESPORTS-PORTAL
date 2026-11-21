@@ -440,7 +440,7 @@ export default function AdminPage() {
 
         {activeTab === 'Coach Dashboard' && (
           <CoachDashboard activeTeam={activeTeam} roster={roster} matches={completedMatches}
-            canEdit={canMatches} onEvaluateMatch={openMatchForEvaluation} onOpenMatchLog={() => setActiveTab('Match Log')}
+            managementRole={managementRole} canEdit={canMatches} onEvaluateMatch={openMatchForEvaluation} onOpenMatchLog={() => setActiveTab('Match Log')}
             onOpenReport={openDashboardWeeklyReport} onOpenReports={() => { setReportFocus(null); setActiveTab('Weekly Report'); }} />
         )}
 
