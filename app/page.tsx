@@ -4,6 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
+import SiteDecor from '../lib/SiteDecor';
 import { getTeamTheme } from '../lib/teamTheme';
 
 type SiteProfile = {
@@ -69,6 +70,7 @@ export default function DagEsportsHome() {
 
   return (
     <main className="relative min-h-screen overflow-hidden bg-[#09060b] text-white">
+      <SiteDecor />
       <div className="pointer-events-none absolute inset-x-0 top-0 h-[760px] bg-[radial-gradient(ellipse_at_top,rgba(200,25,107,0.23),transparent_63%)]" />
       <div className="relative z-10 mx-auto max-w-6xl px-4 pb-20 pt-10 sm:px-6 md:pt-16">
         <section aria-labelledby="dag-title" className="relative overflow-hidden rounded-[2rem] border border-pink-500/30 bg-gradient-to-b from-[#2a1021] via-[#171018] to-[#0e0b10] px-5 py-10 text-center shadow-[0_28px_100px_rgba(0,0,0,0.4)] sm:px-10 md:py-16">

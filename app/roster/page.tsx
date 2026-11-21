@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import SiteDecor from '../../lib/SiteDecor';
 import TeamNavigation from '../../lib/TeamNavigation';
 import { getTeamTheme, themeStyle } from '../../lib/teamTheme';
 import { supabase } from '../../lib/supabase';
@@ -34,7 +35,7 @@ export default function RosterPage() {
     let cancelled = false;
     async function fetchRoster() {
       setLoading(true);
-      const { data, error } = await supabase.from('public_player_profiles').select('id,team,ign,role,image_url,achievements,full_name,stay,age').eq('team', activeTeam).order('id');
+      const { data, error } = await supabase.from('public_player_profiles').select('id,team,ign,role,main_hero,image_url,achievements,full_name,stay,age').eq('team', activeTeam).order('id');
       if (error) console.error('Roster error:', error);
       if (cancelled) return;
       setRoster(data || []);
@@ -73,6 +74,9 @@ export default function RosterPage() {
             isStaffCard ? 'text-yellow-400 bg-yellow-600/20 border-yellow-600/50' : 'text-accent bg-accent/10 border-accent/40'}`}>
             {isStaffCard ? '★ ' : ''}{player.role}
           </span>
+          {!isStaffCard && (
+            <p className="text-gray-400 text-xs mb-3">Signature: <span className="text-gray-200 font-semibold">{player.main_hero || '—'}</span></p>
+          )}
           <span className={`text-[10px] font-bold uppercase tracking-wider ${expanded ? (isStaffCard ? 'text-yellow-400' : 'text-accent') : 'text-gray-500'}`}>
             {expanded ? '▲ Hide details' : '▼ Show details'}
           </span>
@@ -101,6 +105,7 @@ export default function RosterPage() {
 
   return (
     <main className="min-h-screen bg-[#0a0508] text-white flex flex-col items-center pt-10 md:pt-16 p-6 md:p-10 pb-20 relative overflow-hidden" style={themeStyle(activeTeam)}>
+      <SiteDecor />
       <div className="fixed inset-0 z-0 pointer-events-none flex items-center justify-center">
         <div className="absolute inset-0 bg-gradient-to-b from-[#121212]/90 via-[#121212]/80 to-[#121212] z-10"></div>
         <img key={activeTeam} src={getTeamTheme(activeTeam).logo} alt="DAG Wallpaper" className="w-[150vw] md:w-[70vw] opacity-15 blur-[2px] grayscale-[30%] mix-blend-lighten z-0 object-contain" />

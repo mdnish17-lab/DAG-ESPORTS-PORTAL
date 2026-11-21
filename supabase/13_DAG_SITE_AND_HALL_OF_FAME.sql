@@ -1,6 +1,5 @@
 -- DAG Esports organization home and management split | SQL 13
 -- Apply AFTER existing DAG security migrations 09-12, and after a verified backup.
--- Rerunnable: existing public policies are preserved, not dropped or replaced.
 -- New additive tables only; existing player, achievement, match and KPI data untouched.
 -- Owner elevation is NOT automatic. See docs for the separate manual role assignment.
 begin;
@@ -60,103 +59,31 @@ grant insert, update, delete on public.dag_hall_of_fame to authenticated;
 
 -- Never rely on a hidden button as an authorization boundary.
 -- Both approved admin session and explicit owner role must hold for writes.
-do $policy$
-begin
-  if not exists (
-    select 1 from pg_policies
-    where schemaname = 'public' and tablename = 'dag_site_profile' and policyname = 'dag_site_public_read'
-  ) then
-    create policy dag_site_public_read on public.dag_site_profile
-      for select to anon, authenticated using (true);
-  end if;
-end
-$policy$;
-do $policy$
-begin
-  if not exists (
-    select 1 from pg_policies
-    where schemaname = 'public' and tablename = 'dag_site_profile' and policyname = 'dag_site_owner_insert'
-  ) then
-    create policy dag_site_owner_insert on public.dag_site_profile
-      for insert to authenticated
-      with check ((select public.is_approved_admin()) and (select public.my_management_role()) = 'owner');
-  end if;
-end
-$policy$;
-do $policy$
-begin
-  if not exists (
-    select 1 from pg_policies
-    where schemaname = 'public' and tablename = 'dag_site_profile' and policyname = 'dag_site_owner_update'
-  ) then
-    create policy dag_site_owner_update on public.dag_site_profile
-      for update to authenticated
-      using ((select public.is_approved_admin()) and (select public.my_management_role()) = 'owner')
-      with check ((select public.is_approved_admin()) and (select public.my_management_role()) = 'owner');
-  end if;
-end
-$policy$;
-do $policy$
-begin
-  if not exists (
-    select 1 from pg_policies
-    where schemaname = 'public' and tablename = 'dag_site_profile' and policyname = 'dag_site_owner_delete'
-  ) then
-    create policy dag_site_owner_delete on public.dag_site_profile
-      for delete to authenticated
-      using ((select public.is_approved_admin()) and (select public.my_management_role()) = 'owner');
-  end if;
-end
-$policy$;
+create policy dag_site_public_read on public.dag_site_profile
+  for select to anon, authenticated using (true);
+create policy dag_site_owner_insert on public.dag_site_profile
+  for insert to authenticated
+  with check ((select public.is_approved_admin()) and (select public.my_management_role()) = 'owner');
+create policy dag_site_owner_update on public.dag_site_profile
+  for update to authenticated
+  using ((select public.is_approved_admin()) and (select public.my_management_role()) = 'owner')
+  with check ((select public.is_approved_admin()) and (select public.my_management_role()) = 'owner');
+create policy dag_site_owner_delete on public.dag_site_profile
+  for delete to authenticated
+  using ((select public.is_approved_admin()) and (select public.my_management_role()) = 'owner');
 
-do $policy$
-begin
-  if not exists (
-    select 1 from pg_policies
-    where schemaname = 'public' and tablename = 'dag_hall_of_fame' and policyname = 'dag_fame_public_read'
-  ) then
-    create policy dag_fame_public_read on public.dag_hall_of_fame
-      for select to anon, authenticated using (true);
-  end if;
-end
-$policy$;
-do $policy$
-begin
-  if not exists (
-    select 1 from pg_policies
-    where schemaname = 'public' and tablename = 'dag_hall_of_fame' and policyname = 'dag_fame_owner_insert'
-  ) then
-    create policy dag_fame_owner_insert on public.dag_hall_of_fame
-      for insert to authenticated
-      with check ((select public.is_approved_admin()) and (select public.my_management_role()) = 'owner');
-  end if;
-end
-$policy$;
-do $policy$
-begin
-  if not exists (
-    select 1 from pg_policies
-    where schemaname = 'public' and tablename = 'dag_hall_of_fame' and policyname = 'dag_fame_owner_update'
-  ) then
-    create policy dag_fame_owner_update on public.dag_hall_of_fame
-      for update to authenticated
-      using ((select public.is_approved_admin()) and (select public.my_management_role()) = 'owner')
-      with check ((select public.is_approved_admin()) and (select public.my_management_role()) = 'owner');
-  end if;
-end
-$policy$;
-do $policy$
-begin
-  if not exists (
-    select 1 from pg_policies
-    where schemaname = 'public' and tablename = 'dag_hall_of_fame' and policyname = 'dag_fame_owner_delete'
-  ) then
-    create policy dag_fame_owner_delete on public.dag_hall_of_fame
-      for delete to authenticated
-      using ((select public.is_approved_admin()) and (select public.my_management_role()) = 'owner');
-  end if;
-end
-$policy$;
+create policy dag_fame_public_read on public.dag_hall_of_fame
+  for select to anon, authenticated using (true);
+create policy dag_fame_owner_insert on public.dag_hall_of_fame
+  for insert to authenticated
+  with check ((select public.is_approved_admin()) and (select public.my_management_role()) = 'owner');
+create policy dag_fame_owner_update on public.dag_hall_of_fame
+  for update to authenticated
+  using ((select public.is_approved_admin()) and (select public.my_management_role()) = 'owner')
+  with check ((select public.is_approved_admin()) and (select public.my_management_role()) = 'owner');
+create policy dag_fame_owner_delete on public.dag_hall_of_fame
+  for delete to authenticated
+  using ((select public.is_approved_admin()) and (select public.my_management_role()) = 'owner');
 commit;
 
 notify pgrst, 'reload schema';
@@ -171,12 +98,3 @@ from information_schema.role_table_grants
 where table_schema = 'public'
   and table_name in ('dag_site_profile', 'dag_hall_of_fame')
 order by table_name, grantee, privilege_type;
-
-
--- Security audit: inspect all defined policies and their SQL definitions.
--- A policy that already existed is not silently replaced by this migration.
-select tablename, policyname, cmd, roles, qual, with_check
-from pg_policies
-where schemaname = 'public'
-  and tablename in ('dag_site_profile', 'dag_hall_of_fame')
-order by tablename, policyname;
