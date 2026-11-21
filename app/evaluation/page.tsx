@@ -3,6 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import SiteDecor from '../../lib/SiteDecor';
+import TeamNavigation from '../../lib/TeamNavigation';
 import { getTeamTheme, themeStyle } from '../../lib/teamTheme';
 import { supabase } from '../../lib/supabase';
 import { useEffect, useRef, useState } from 'react';
@@ -11,13 +12,6 @@ import { type ImprovementTarget } from '../../lib/improvementTargets';
 import { WEEKLY_METRICS, hasSixRatings, weightedScore, weeklyReviewsFromMatches, formatWeek, type WeeklyReview } from '../../lib/weeklyKpi';
 
 const TEAMS = ['DAG Ladies', 'DAG Montrix'];
-const NAV = [
-  { href: '/', label: 'Dashboard' },
-  { href: '/roster', label: 'Roster' },
-  { href: '/achievement', label: 'Achievement' },
-  { href: '/evaluation', label: 'Evaluation' },
-  { href: '/planner', label: 'Planner' },
-];
 const CURRENT = '/evaluation';
 
 // ===== WEIGHTS for Overall Evaluation (must sum to 1) =====
@@ -274,19 +268,12 @@ export default function EvaluationPage() {
             <p className="text-xs tracking-[0.4em] text-gray-400 uppercase mb-2">De Ant Gaming</p>
             <h1 className="text-4xl md:text-6xl font-black uppercase leading-tight bg-gradient-to-r from-accent via-pink-300 to-white bg-clip-text text-transparent drop-shadow-lg">{activeTeam}</h1>
             <p className="text-gray-300 font-semibold tracking-widest uppercase text-sm mt-2">Evaluation</p>
-            <nav className="flex gap-2 flex-wrap items-center mt-6">
-              {NAV.map((n) =>
-                n.href === CURRENT ? (
-                  <span key={n.href} className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-accent text-white shadow-[0_0_15px_var(--accent-glow)]">{n.label}</span>
-                ) : (
-                  <Link key={n.href} href={n.href} className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider text-gray-300 border border-white/15 hover:border-accent hover:text-accent transition-colors">{n.label}</Link>
-                )
-              )}
-              <Link href="/admin" className="px-4 py-1.5 rounded-full text-xs font-bold uppercase tracking-wider bg-white/10 hover:bg-white/20 text-white border border-white/10 transition-colors ml-1">Admin</Link>
-            </nav>
+
           </div>
           <Image key={activeTeam} src={getTeamTheme(activeTeam).logo} alt="DAG Logo" width={190} height={190} className="object-contain drop-shadow-2xl relative animate-fadeIn" />
         </div>
+
+        <TeamNavigation current={CURRENT} />
 
         {/* Player selection */}
         <div className="w-full">
