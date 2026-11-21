@@ -85,7 +85,7 @@ export default function EvaluationPage() {
       const att: Record<string, { attended: number; absent: number; rate: number; lastReason: string }> = {};
       if (staffMembers.length > 0 && ids.length > 0) {
         const { data: rows, error: aErr } = await supabase
-          .from('match_player_stats')
+          .from('public_match_player_stats')
           .select('ign, status, match_id')
           .in('match_id', ids)
           .in('ign', staffMembers.map((s: any) => s.ign))
