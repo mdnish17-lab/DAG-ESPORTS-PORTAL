@@ -23,11 +23,6 @@ export default async function ManagementLanding() {
           <p className="mt-3 text-sm text-gray-300">Choose your authorized workspace. Your account role: <strong className="text-white">{String(role || 'unassigned')}</strong>.</p>
         </header>
 
-        <nav aria-label="Management sections" className="mt-4 flex flex-wrap gap-2 rounded-xl border border-gray-800 bg-[#141015] p-3">
-          <Link href="/" className="rounded-lg border border-gray-700 px-4 py-2 text-sm text-gray-200 hover:border-pink-400">DAG Home</Link>
-          <Link href="/management/account" className="rounded-lg border border-pink-700/60 px-4 py-2 text-sm font-bold text-pink-200 hover:bg-pink-500/10">Account Settings</Link>
-        </nav>
-
         <div className="mt-7 grid gap-5 md:grid-cols-2">
           {isOwner && (
             <Link href="/management/admin" className="group rounded-3xl border border-pink-500/35 bg-[#1b101a] p-7 hover:border-pink-300 hover:bg-[#271525]">
