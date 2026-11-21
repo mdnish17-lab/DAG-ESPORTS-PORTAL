@@ -7,7 +7,6 @@ const tabs = [
   { href: '/roster', label: 'Roster' },
   { href: '/achievement', label: 'Achievement' },
   { href: '/evaluation', label: 'Evaluation' },
-  { href: '/planner', label: 'Planner' },
 ] as const;
 
 /** Navigation sits BELOW the team-banner artwork, not over its background. */
