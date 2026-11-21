@@ -50,7 +50,7 @@ export default function Home() {
     if (!teamReady) return;
     let cancelled = false;
     async function fetchDashboardData() {
-      const { data: pData, error: pErr } = await supabase.from('players').select('id').eq('team', activeTeam);
+      const { data: pData, error: pErr } = await supabase.from('public_player_profiles').select('id').eq('team', activeTeam);
       if (pErr) console.error('Players error:', pErr);
       const { data: matchData, error: mErr } = await supabase
         .from('matches')
