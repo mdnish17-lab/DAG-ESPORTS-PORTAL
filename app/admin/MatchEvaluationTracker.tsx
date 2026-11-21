@@ -12,6 +12,8 @@ type Props = {
   onEvaluate: (id: number) => void;
   onEdit: (match: ProgressMatch) => void;
   onDelete: (id: number) => void;
+  canEdit?: boolean;
+  canDelete?: boolean;
 };
 
 const label = { complete: 'Completed', 'in-progress': 'In progress', 'not-started': 'Not started', 'no-players': 'No players' };
@@ -23,7 +25,7 @@ const badge = {
 };
 
 /** Progress is derived from the existing saved match assessments; no database writes. */
-export default function MatchEvaluationTracker({ activeTeam, roster, matches, onEvaluate, onEdit, onDelete }: Props) {
+export default function MatchEvaluationTracker({ activeTeam, roster, matches, onEvaluate, onEdit, onDelete, canEdit = true, canDelete = true }: Props) {
   const [records, setRecords] = useState<ProgressAssessment[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -142,9 +144,9 @@ export default function MatchEvaluationTracker({ activeTeam, roster, matches, on
                 </div>}
                 {summary.status === 'complete' && <p className="mt-3 text-xs text-emerald-300">All current players have completed assessments.</p>}
                 <div className="mt-4 flex flex-wrap gap-2">
-                  <button type="button" onClick={() => onEvaluate(match.id)} className="rounded-lg bg-accent px-3 py-2 text-xs font-black uppercase text-white hover:brightness-110">{summary.status === 'complete' ? 'View evaluations' : 'Continue evaluation'}</button>
-                  <button type="button" onClick={() => onEdit(match)} className="rounded-lg border border-gray-600 px-3 py-2 text-xs font-bold hover:border-accent">Edit match</button>
-                  <button type="button" onClick={() => onDelete(match.id)} className="rounded-lg border border-red-900 px-3 py-2 text-xs font-bold text-red-300 hover:bg-red-950/30">Delete</button>
+                  {canEdit && <button type="button" onClick={() => onEvaluate(match.id)} className="rounded-lg bg-accent px-3 py-2 text-xs font-black uppercase text-white hover:brightness-110">{summary.status === 'complete' ? 'View evaluations' : 'Continue evaluation'}</button>}
+                  {canEdit && <button type="button" onClick={() => onEdit(match)} className="rounded-lg border border-gray-600 px-3 py-2 text-xs font-bold hover:border-accent">Edit match</button>}
+                  {canDelete && <button type="button" onClick={() => onDelete(match.id)} className="rounded-lg border border-red-900 px-3 py-2 text-xs font-bold text-red-300 hover:bg-red-950/30">Delete</button>}
                 </div>
               </article>
             );
