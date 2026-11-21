@@ -3,7 +3,7 @@
 // Decorations shared by every page:
 //  - "DAG ESPORTS" text repeating down both sides of the screen (scrolls top -> bottom)
 //  - "Made by NishiKudo" credit fixed in the viewport on every page
-// Colors follow the team theme (--accent-color is set on <main>).
+// This component is mounted only once in RootLayout so the side text and credit persist across all routes.
 
 const WORD = 'DAG ESPORTS';
 const REPEATS = 8;
@@ -46,21 +46,21 @@ export default function SiteDecor() {
       `}</style>
 
       {/* Subtle DAG emblem atmosphere behind page content; animations stop when reduced motion is preferred. */}
-      <div aria-hidden="true" className="dag-animated-background pointer-events-none fixed inset-0 z-0 overflow-hidden select-none">
+      <div aria-hidden="true" className="dag-animated-background pointer-events-none fixed inset-0 z-[19] overflow-hidden select-none">
         <div className="dag-ambient-glow dag-ambient-glow-left" />
         <div className="dag-ambient-glow dag-ambient-glow-right" />
         <div className="dag-background-logo" />
         <div className="dag-background-ring" />
       </div>
 
-      <div aria-hidden className="fixed inset-y-0 left-0 z-[5] w-5 overflow-hidden opacity-15 pointer-events-none select-none sm:w-10 md:w-14 md:opacity-20">
+      <div aria-hidden className="fixed inset-y-0 left-0 z-[25] w-5 overflow-hidden opacity-20 pointer-events-none select-none sm:w-10 md:w-14 md:opacity-25">
         <Column />
       </div>
-      <div aria-hidden className="fixed inset-y-0 right-0 z-[5] w-5 overflow-hidden opacity-15 pointer-events-none select-none sm:w-10 md:w-14 md:opacity-20">
+      <div aria-hidden className="fixed inset-y-0 right-0 z-[25] w-5 overflow-hidden opacity-20 pointer-events-none select-none sm:w-10 md:w-14 md:opacity-25">
         <Column flip />
       </div>
 
-      <div className="fixed bottom-20 right-2 z-[50] rounded-full border border-white/15 bg-black/85 px-3 py-1 text-[10px] tracking-wide text-gray-200 shadow-lg backdrop-blur pointer-events-none select-none sm:bottom-3 sm:right-4 sm:text-[11px]">
+      <div className="fixed bottom-20 right-2 z-[60] rounded-full border border-white/15 bg-black/85 px-3 py-1 text-[10px] tracking-wide text-gray-200 shadow-lg backdrop-blur pointer-events-none select-none sm:bottom-3 sm:right-4 sm:text-[11px]">
         Made by <span className="font-bold" style={{ color: 'var(--accent-color, #c8196b)' }}>NishiKudo</span>
       </div>
     </>
