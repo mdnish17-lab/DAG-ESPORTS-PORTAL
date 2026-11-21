@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { WEEKLY_METRICS, hasSixRatings, weightedScore, type WeeklyMetricKey } from '../../lib/weeklyKpi';
+import { getAssessmentProgressState, isStaffMember } from '../../lib/matchEvaluationProgress';
 
 type Attendance = '' | 'played' | 'bench' | 'absent';
 type ScoreField = WeeklyMetricKey;
@@ -34,7 +35,7 @@ type Props = {
   initialMatchId?: number | null;
 };
 
-const isStaff = (player: RosterPlayer) => ['coach', 'manager'].includes(String(player.role || '').toLowerCase());
+const isStaff = isStaffMember;
 const emptyAssessment = (): PlayerAssessment => ({
   status: '', kills: '0', deaths: '0', assists: '0',
   mechanics_score: null, macro_score: null, communication_score: null,
@@ -56,6 +57,10 @@ export default function PlayerEvaluationPanel({ activeTeam, roster, matches, ini
   const selectedMatch = matches.find((match) => match.id === matchId);
   const selectedPlayer = roster.find((player) => player.id === playerId);
   const assessment = selectedPlayer ? (assessments[selectedPlayer.id] || emptyAssessment()) : null;
+  const trackedPlayers = roster.filter((player) => !isStaff(player));
+  const evaluatedCount = trackedPlayers.filter((player) =>
+    assessments[player.id]?.id && getAssessmentProgressState(assessments[player.id]) === 'complete'
+  ).length;
 
   const loadAssessments = useCallback(async (id: number) => {
     const request = ++loadVersion.current;
@@ -220,14 +225,31 @@ export default function PlayerEvaluationPanel({ activeTeam, roster, matches, ini
                 <p className="text-xs font-bold uppercase tracking-widest text-accent">2. Select player</p>
                 <h3 className="mt-1 text-xl font-black">DAG vs {selectedMatch.opponent_name}</h3>
                 <p className="mt-1 text-sm text-gray-400">{selectedMatch.match_date} · {selectedMatch.match_type || 'Scrim'}</p>
+                {!loading && trackedPlayers.length > 0 && (
+                  <div className="mt-4 rounded-xl border border-gray-700 bg-black/25 p-3" role="status">
+                    <div className="flex items-center justify-between gap-3 text-sm font-bold">
+                      <span>Evaluation progress</span>
+                      <span className={evaluatedCount === trackedPlayers.length ? 'text-emerald-300' : 'text-accent'}>{evaluatedCount}/{trackedPlayers.length} players</span>
+                    </div>
+                    <div className="mt-2 h-2.5 overflow-hidden rounded-full bg-gray-800" aria-label="Match evaluation progress">
+                      <div className={`h-full rounded-full ${evaluatedCount === trackedPlayers.length ? 'bg-emerald-500' : 'bg-accent'}`}
+                        style={{ width: `${Math.round(evaluatedCount / trackedPlayers.length * 100)}%` }} />
+                    </div>
+                    <p className="mt-2 text-xs text-gray-400">Played = all six ratings saved. Benched / Absent = participation saved. Staff attendance is not included in this count.</p>
+                  </div>
+                )}
                 <div className="mt-4 grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-4">
                   {roster.map((player) => {
-                    const saved = Boolean(assessments[player.id]?.id);
+                    const savedRecord = assessments[player.id];
+                    const saved = Boolean(savedRecord?.id);
+                    const complete = saved && (isStaff(player) || getAssessmentProgressState(savedRecord) === 'complete');
                     return <button type="button" key={player.id} onClick={() => { setPlayerId(player.id); setNotice(''); setError(''); }}
                       className={`rounded-lg border px-3 py-3 text-left transition-colors ${playerId === player.id ? 'border-accent bg-accent/15' : 'border-gray-700 bg-[#101010] hover:border-gray-500'}`}>
                       <span className="block truncate text-sm font-bold">{player.ign}</span>
                       <span className="mt-0.5 block truncate text-[11px] text-gray-400">{player.role}</span>
-                      <span className={`mt-1 block text-[11px] ${saved ? 'text-green-400' : 'text-gray-500'}`}>{saved ? '● Saved' : '○ Not recorded'}</span>
+                      <span className={`mt-1 block text-[11px] ${complete ? 'text-emerald-400' : saved ? 'text-amber-300' : 'text-gray-500'}`}>
+                        {complete ? '● Complete' : saved ? '◐ Needs review' : '○ Not recorded'}
+                      </span>
                     </button>;
                   })}
                 </div>
