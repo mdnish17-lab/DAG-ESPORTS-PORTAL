@@ -3,7 +3,6 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import DagHomeNavigation from '../../lib/DagHomeNavigation';
-import { getTeamTheme, themeStyle } from '../../lib/teamTheme';
 import { supabase } from '../../lib/supabase';
 import { useEffect, useRef, useState } from 'react';
 
@@ -37,7 +36,6 @@ export default function PlannerPage() {
     if (saved && TEAMS.includes(saved)) setActiveTeamState(saved);
     setTeamReady(true);
   }, []);
-  const setActiveTeam = (team: string) => { setActiveTeamState(team); localStorage.setItem('dag-active-team', team); };
 
   const [tool, setTool] = useState<Tool>('move');
   const [color, setColor] = useState(PALETTE[1]);
@@ -215,32 +213,19 @@ export default function PlannerPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#0a0508] text-white flex flex-col items-center pt-10 md:pt-16 p-4 md:p-10 pb-20 relative overflow-hidden" style={themeStyle(activeTeam)}>
-      <div className="fixed inset-0 z-0 pointer-events-none flex items-center justify-center">
-        <div className="absolute inset-0 bg-gradient-to-b from-[#121212]/90 via-[#121212]/80 to-[#121212] z-10"></div>
-        <img key={activeTeam} src={getTeamTheme(activeTeam).logo} alt="DAG Wallpaper" className="w-[150vw] md:w-[70vw] opacity-15 blur-[2px] grayscale-[30%] mix-blend-lighten z-0 object-contain" />
-      </div>
-
+    <main className="min-h-screen bg-[#090a0d] text-white flex flex-col items-center pt-10 md:pt-16 p-4 md:p-10 pb-20 relative overflow-hidden">
       <div className="relative z-10 w-full max-w-6xl flex flex-col items-center">
-        <div className="flex gap-3 mb-6 p-1.5 rounded-full bg-black/50 border border-white/10 backdrop-blur">
-          {TEAMS.map((team) => (
-            <button key={team} type="button" onClick={() => setActiveTeam(team)}
-              className={`px-7 py-2 rounded-full font-extrabold tracking-widest uppercase text-sm transition-all ${
-                activeTeam === team ? 'bg-accent text-white shadow-[0_0_20px_var(--accent-glow)]' : 'text-gray-500 hover:text-white'}`}>
-              {team}
-            </button>
-          ))}
-        </div>
-
-        <div className="relative bg-accent-deep/80 backdrop-blur-md p-8 md:p-10 rounded-2xl border border-accent/30 shadow-[0_10px_50px_var(--accent-glow-soft)] w-full flex flex-col md:flex-row justify-between items-center gap-8 mb-8 overflow-hidden">
-          <div className="absolute -top-24 -left-24 w-64 h-64 rounded-full bg-accent/20 blur-3xl pointer-events-none"></div>
-          <div className="relative">
-            <p className="text-xs tracking-[0.4em] text-gray-400 uppercase mb-2">De Ant Gaming</p>
-            <h1 className="text-4xl md:text-6xl font-black uppercase leading-tight bg-gradient-to-r from-accent via-pink-300 to-white bg-clip-text text-transparent drop-shadow-lg">{activeTeam}</h1>
-            <p className="text-gray-300 font-semibold tracking-widest uppercase text-sm mt-2">Strategy Planner</p>
-
+        <div className="relative w-full rounded-2xl border border-gray-700 bg-[#14171d] p-5 shadow-lg sm:p-8">
+          <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
+            <Image src="/dag-logo.jpg" alt="DAG Esports logo" width={104} height={104}
+              className="h-20 w-20 rounded-full object-contain sm:h-24 sm:w-24" />
+            <div className="min-w-0">
+              <p className="text-xs font-bold uppercase tracking-[0.35em] text-gray-400">De Ant Gaming</p>
+              <h1 className="mt-2 text-3xl font-black uppercase tracking-wide text-white sm:text-5xl">Strategy Planner</h1>
+              <p className="mt-2 text-sm text-gray-300">A distraction-free workspace for positioning, rotations and tactical drawings.</p>
+              <p className="mt-2 text-xs text-gray-400">Existing plans remain saved under their original team context: <strong className="text-gray-200">{activeTeam}</strong>.</p>
+            </div>
           </div>
-          <Image key={activeTeam} src={getTeamTheme(activeTeam).logo} alt="DAG Logo" width={190} height={190} className="object-contain drop-shadow-2xl relative animate-fadeIn" />
         </div>
 
         <DagHomeNavigation current="planner" />
@@ -279,7 +264,7 @@ export default function PlannerPage() {
             </div>
 
             <svg ref={svgRef} viewBox="0 0 1000 1000"
-              className="w-full max-w-[760px] aspect-square rounded-3xl shadow-2xl border border-white/10 select-none bg-[#0e1a1f]"
+              className="w-full max-w-[760px] aspect-square rounded-3xl shadow-2xl border border-gray-600 select-none bg-[#0e1a1f]"
               style={{ touchAction: 'none', cursor: tool === 'move' ? 'default' : tool === 'draw' ? 'crosshair' : 'cell' }}
               onPointerDown={onSvgDown} onPointerMove={onMove} onPointerUp={onUp} onPointerCancel={onUp}>
               <image href="/planner-map.webp" x="0" y="0" width="1000" height="1000" preserveAspectRatio="xMidYMid meet" style={{ pointerEvents: 'none' }} />
