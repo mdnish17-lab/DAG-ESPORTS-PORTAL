@@ -124,26 +124,9 @@ export default function AdminPage() {
       .eq('team', activeTeam)
       .order('match_date', { ascending: false });
     if (mErr) console.error('Matches error:', mErr);
-    if (matches) {
-      const today = new Date().toISOString().split('T')[0];
-      const needsTransfer = matches.filter((m) => m.status === 'upcoming' && m.match_date < today);
-      if (needsTransfer.length > 0) {
-        for (const m of needsTransfer) {
-          const { error } = await supabase.from('matches').update({ status: 'completed', result: 'DRAW' }).eq('id', m.id);
-          if (error) console.error('Auto-transfer error:', error);
-        }
-        const { data: refreshed } = await supabase
-          .from('matches')
-          .select('*')
-          .eq('team', activeTeam)
-          .order('match_date', { ascending: false });
-        setAllMatches(refreshed || []);
-      } else {
-        setAllMatches(matches);
-      }
-    } else {
-      setAllMatches([]);
-    }
+    // Never fabricate a score or DRAW because a scheduled date has passed.
+    // An overdue match remains scheduled until management explicitly confirms a result.
+    setAllMatches(matches || []);
 
     const { data: ach, error: aErr } = await supabase
       .from('team_achievements')
@@ -155,7 +138,8 @@ export default function AdminPage() {
   }
 
   const completedMatches = allMatches.filter((m) => m.status === 'completed');
-  const upcomingMatchesList = allMatches.filter((m) => m.status === 'upcoming');
+  const upcomingMatchesList = allMatches.filter((m) => m.status === 'upcoming' || m.status === 'awaiting_result');
+  const todayMY = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
   const result = (() => {
     const d = Number(dagScore), o = Number(oppScore);
@@ -169,6 +153,7 @@ export default function AdminPage() {
   async function handleSaveMatch(e: React.FormEvent) {
     e.preventDefault();
     if (!matchDate || !opponentName.trim()) { alert('Fill in the date and opponent.'); return; }
+    if (dagScore.trim() === '' || oppScore.trim() === '') { alert('Enter both confirmed match scores. No default DRAW result will be used.'); return; }
     const ourScore = Number(dagScore), theirScore = Number(oppScore);
     if (![ourScore, theirScore].every((value) => Number.isInteger(value) && value >= 0)) {
       alert('Both match scores must be non-negative whole numbers.');
@@ -210,6 +195,22 @@ export default function AdminPage() {
     setEditingMatchId(null);
     setMatchDate(''); setMatchType('Scrim'); setOpponentName(''); setOpponentLogo('');
     setDagScore('0'); setOppScore('0'); setMatchReview(''); setMatchScreenshots('');
+  }
+
+  // Called explicitly by management, never by the calendar or an automatic job.
+  async function finishScheduledMatch(m: any) {
+    if (!confirm(`Record the actual result for DAG vs ${m.opponent_name}? Enter both scores in Match Log before saving.`)) return;
+    setEditingMatchId(m.id);
+    setMatchDate(m.match_date);
+    setMatchType(m.match_type || 'Scrim');
+    setOpponentName(m.opponent_name);
+    setOpponentLogo(m.opponent_logo || '');
+    setDagScore('');
+    setOppScore('');
+    setMatchReview(m.match_review || '');
+    setMatchScreenshots(m.result_screenshots || '');
+    setActiveTab('Match Log');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
   function startEditMatch(m: any) {
@@ -411,7 +412,7 @@ export default function AdminPage() {
             <h2 className="text-2xl font-extrabold text-accent uppercase mb-4">Coach / Manager Guide</h2>
             <div className="space-y-4 text-gray-300">
               <p><strong>1. Managing the Roster:</strong> Go to Roster to add players or coaches. Make sure you are in the correct team view (Ladies or Montrix) before adding them.</p>
-              <p><strong>2. Upcoming Matches Auto-Transfer:</strong> Upcoming matches are transferred to completed Match Log after their date passes. Review the score and match details there, then evaluate players in the separate Player Evaluation tab.</p>
+              <p><strong>2. Match Result Confirmation:</strong> Scheduled matches never become draws automatically. After a match, select Enter result, verify both scores and save to Match Log. Then evaluate participating players.</p>
               <p><strong>3. Player Attendance:</strong> In Player Evaluation, select an already registered match and mark each player (and coach / manager) as Played, Benched, or Absent. If someone is absent, you must write a short remark (e.g., "Sick", "Injury", "Personal"). Absent members do NOT count toward attendance rate.</p>
               <p><strong>Evaluation Progress Tracker:</strong> In Match Log, check which matches still need player assessments. Select Continue evaluation to rate missing players. Benched and Absent statuses count as recorded; Played needs all six KPI scores.</p>
               <p><strong>4. Player Evaluation System:</strong> Choose a registered match and a player, then use the large 1–5 rating scales for all six coach-assessed KPIs: Mechanics, Macro, Communication, Role Execution, Discipline and Hero Pool. Ratings are weighted using the Excel workbook and combined with attendance for Overall Evaluation.</p>
@@ -545,7 +546,18 @@ export default function AdminPage() {
                       <p className="text-accent text-xs font-bold">{m.match_date}{m.match_time ? ` · ${formatTime(m.match_time)}` : ''}</p>
                       <p className="font-bold">DAG vs {m.opponent_name} <span className="text-gray-500 text-xs ml-2 font-normal bg-gray-900 px-2 py-0.5 rounded">{m.match_type}</span></p>
                     </div>
-                    <button onClick={() => deleteRecord('matches', m.id)} className="bg-red-900 text-red-300 text-xs px-3 py-1.5 rounded">Delete</button>
+                    <div className="flex flex-col items-end gap-2">
+                      {m.match_date <= todayMY && (
+                        <span className="rounded border border-amber-800 bg-amber-950/25 px-2 py-1 text-[10px] font-bold text-amber-300">
+                          Awaiting confirmed result
+                        </span>
+                      )}
+                      <button type="button" onClick={() => { void finishScheduledMatch(m); }}
+                        className="rounded bg-accent px-3 py-1.5 text-xs font-bold text-white hover:brightness-110">
+                        Enter result
+                      </button>
+                      <button onClick={() => deleteRecord('matches', m.id)} className="bg-red-900 text-red-300 text-xs px-3 py-1.5 rounded">Delete</button>
+                    </div>
                   </div>
                 ))}
               </div>
