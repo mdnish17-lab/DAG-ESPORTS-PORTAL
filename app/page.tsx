@@ -67,7 +67,7 @@ export default function Home() {
   }, [activeTeam, teamReady]);
 
   const completedMatches = matches.filter((m) => m.status === 'completed');
-  const upcomingMatches = matches.filter((m) => m.status === 'upcoming');
+  const upcomingMatches = matches.filter((m) => m.status === 'upcoming' || m.status === 'awaiting_result');
 
   const matchesPlayed = completedMatches.length;
   const totalWins = completedMatches.filter((m) => m.result === 'WIN').length;
@@ -169,7 +169,7 @@ export default function Home() {
         <div className="w-full mt-14 grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Upcoming */}
           <div className="lg:col-span-1">
-            <h2 className="text-xl font-bold mb-6 tracking-widest text-gray-200 border-b border-gray-800/50 pb-3 uppercase">Upcoming</h2>
+            <h2 className="text-xl font-bold mb-6 tracking-widest text-gray-200 border-b border-gray-800/50 pb-3 uppercase">Scheduled / Awaiting Result</h2>
             <div className="flex flex-col gap-4">
               {upcomingMatches.length === 0 ? (
                 <p className="text-gray-500 italic text-sm bg-black/40 p-4 rounded-xl backdrop-blur border border-gray-900">No scheduled matches.</p>
@@ -189,6 +189,7 @@ export default function Home() {
                       {match.match_time && (
                         <p className="text-xs text-gray-400 font-semibold mt-0.5">🕒 {formatTime(match.match_time)}</p>
                       )}
+                      {match.status === 'awaiting_result' && <p className="mt-1 text-xs font-semibold text-amber-300">Awaiting official result</p>}
                     </div>
                   </div>
                 ))
