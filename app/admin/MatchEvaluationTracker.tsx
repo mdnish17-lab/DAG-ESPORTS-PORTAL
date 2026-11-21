@@ -45,7 +45,7 @@ export default function MatchEvaluationTracker({ activeTeam, roster, matches, on
         for (let i = 0; i < ids.length; i += 40) {
           let offset = 0;
           while (!cancelled) {
-            const { data, error: queryError } = await supabase.from('match_player_stats')
+            const { data, error: queryError } = await supabase.from('public_match_player_stats')
               .select('id,match_id,ign,status,mechanics_score,macro_score,communication_score,role_execution_score,discipline_score,hero_pool_score')
               .in('match_id', ids.slice(i, i + 40)).order('id', { ascending: true })
               .range(offset, offset + 999);
