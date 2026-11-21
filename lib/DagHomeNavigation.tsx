@@ -16,7 +16,7 @@ export default function DagHomeNavigation({ current = 'home' }: { current?: 'hom
       <Link href={anchorBase + '#dag-hall-of-fame'} className={baseLink + ' ' + normal}>Hall of Fame</Link>
       <Link href="/planner" aria-current={current === 'planner' ? 'page' : undefined}
         className={baseLink + ' ' + (current === 'planner' ? active : normal)}>Planner</Link>
-      <Link href="/management" className={baseLink + ' ' + manage}>Management</Link>
+      <Link href="/management" className={baseLink + ' col-span-2 sm:col-auto ' + manage}>Management</Link>
     </nav>
   );
 }
