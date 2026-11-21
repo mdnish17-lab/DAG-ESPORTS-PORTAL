@@ -7,8 +7,12 @@ existing Supabase database and keep a known-good Vercel production deployment.
 ## Improvements
 - Overdue scheduled matches no longer silently turn into completed 0–0 DRAW.
   Confirm actual scores in Match Log, or manually mark Awaiting Result / Cancelled / Restore.
-- Public roster uses a strictly limited safe view, excluding real name, DOB,
-  age, stay, MLBB ID and server.
+- Public roster includes full name, age, and **general** location, alongside IGN,
+  role, hero, and achievements. Actual birth dates and MLBB account IDs remain
+  private. Only enter broad areas (town/state), not home addresses.
+- Coach Dashboard includes a searchable Player & Staff Information directory:
+  Coach/Viewer see the safe public fields; Manager/Owner additionally see
+  date of birth, MLBB ID and server (RLS-protected).
 - Public evaluation uses a safe stats view, excluding absent reasons and private
   match-specific coach notes.
 - Owner/Manager/Coach/Viewer permissions are implemented in database RLS, and
@@ -31,6 +35,10 @@ Only a database owner changes account roles. The client cannot assign roles.
 1. Back up the **existing** Supabase project and verify recovery options.
 2. Run supabase/09_SECURITY_PREPARE.sql in the Supabase SQL Editor as postgres.
    It creates read-safe views, the role lookup RPC and new match constraints.
+   **If SQL 09 has already been run, do NOT repeat it.**
+   Next run **supabase/09B_PUBLIC_PROFILE_FIELDS.sql** to extend the public
+   profile view with full name, computed age and general location.
+   Run 09B only after 09. Both scripts must be completed before preview testing.
    **Existing public base-table privileges remain unchanged at this stage.**
 3. Test the PR Vercel Preview for public roster and evaluation, dashboard,
    Manager login, existing matches, reports and planner. Verify Vercel Preview
@@ -66,8 +74,12 @@ roster without first confirming another Manager/Owner login works.
 
 ## Test cases
 
-- Public Roster: IGN, role, main hero, image and public achievements only.
-  No date of birth, home/stay, real name, MLBB ID or server.
+- Public Roster: IGN, full name, age (not exact DOB), general location
+  (the existing stay field), role, hero, image and achievements only.
+  No exact date of birth, home address, MLBB ID or server.
+- Coach Dashboard: searchable player/staff directory with public fields.
+  Manager/Owner additionally see full DOB and MLBB ID/server, retrieved
+  through authenticated, RLS-protected reads. Coach/Viewer cannot fetch them.
 - Public Evaluation: six ratings and attendance; no absence reasons or
   private match-specific coaching comments. Publicly authored weekly
   reports remain visible by design.
@@ -92,7 +104,9 @@ Previously cached data or screenshots are not retroactively erased.
 
 ## Rollback
 
-If preview fails, do not merge or apply stage 2.
+If preview fails, do not merge or apply stage 2. If a user does not
+want a full name or general location shown publicly, remove the relevant
+values from the roster before releasing this privacy change.
 If production fails before stage 2, roll back the code; additive stage 1
 may remain. **After stage 2**, do not roll back to old frontend code that
 requests private base tables: it will correctly fail. Restore the updated
