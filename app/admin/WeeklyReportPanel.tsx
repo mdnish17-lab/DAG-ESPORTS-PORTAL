@@ -5,20 +5,20 @@ import { supabase } from '../../lib/supabase';
 import { formatWeek, weekStartOf } from '../../lib/weeklyKpi';
 
 type PlayerSummary = { id: number; ign: string; role?: string };
-type Props = { activeTeam: string; roster: PlayerSummary[] };
+type Props = { activeTeam: string; roster: PlayerSummary[]; initialPlayerId?: number; initialWeekStart?: string };
 type Report = { id: number; player_id: number; team: string; week_start: string; coach_comment: string; improvements: string; updated_at?: string };
 const fieldClass = 'w-full rounded-xl border border-gray-700 bg-[#121212] px-4 py-3 text-white outline-none focus:border-accent';
 
-export default function WeeklyReportPanel({ activeTeam, roster }: Props) {
+export default function WeeklyReportPanel({ activeTeam, roster, initialPlayerId, initialWeekStart }: Props) {
   const [checkingAccess, setCheckingAccess] = useState(true);
   const [isManager, setIsManager] = useState(false);
   const [accessError, setAccessError] = useState('');
   const [reports, setReports] = useState<Report[]>([]);
-  const [playerId, setPlayerId] = useState('');
+  const [playerId, setPlayerId] = useState(initialPlayerId == null ? '' : String(initialPlayerId));
   const [weekStart, setWeekStart] = useState(() => {
     // The DAG teams operate on Malaysian calendar dates (UTC+08, no DST).
     const localDate = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
-    return weekStartOf(localDate);
+    return initialWeekStart ? weekStartOf(initialWeekStart) : weekStartOf(localDate);
   });
   const [coachComment, setCoachComment] = useState('');
   const [improvements, setImprovements] = useState('');
