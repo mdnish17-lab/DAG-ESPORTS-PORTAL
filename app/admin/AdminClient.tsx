@@ -5,6 +5,7 @@ import AdminLogoutButton from './AdminLogoutButton';
 import AdminPasswordChange from './AdminPasswordChange';
 import PlayerEvaluationPanel from './PlayerEvaluationPanel';
 import MatchEvaluationTracker from './MatchEvaluationTracker';
+import CoachDashboard from './CoachDashboard';
 import WeeklyReportPanel from './WeeklyReportPanel';
 import SiteDecor from '../../lib/SiteDecor';
 import { getTeamTheme, themeStyle } from '../../lib/teamTheme';
@@ -14,7 +15,7 @@ import { useEffect, useState } from 'react';
 const ROLES = ['Coach', 'Manager', 'Midlaner', 'Jungler', 'Roamer', 'Goldlaner', 'Explaner'];
 const TEAMS = ['DAG Ladies', 'DAG Montrix'];
 const MATCH_TYPES = ['Scrim', 'Tournament', 'Scrim Bracket'];
-const TABS = ['Guide', 'Roster', 'Match Log', 'Player Evaluation', 'Weekly Report', 'Upcoming', 'Achievements', 'Account'] as const;
+const TABS = ['Coach Dashboard', 'Guide', 'Roster', 'Match Log', 'Player Evaluation', 'Weekly Report', 'Upcoming', 'Achievements', 'Account'] as const;
 
 // "18:30:00" -> "6:30 PM"
 const formatTime = (t: string) => {
@@ -50,7 +51,7 @@ export default function AdminPage() {
     setTeamReady(true);
   }, []);
   const setActiveTeam = (team: string) => { setActiveTeamState(team); localStorage.setItem('dag-active-team', team); };
-  const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>('Guide');
+  const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>('Coach Dashboard');
 
   const [roster, setRoster] = useState<any[]>([]);
   const [allMatches, setAllMatches] = useState<any[]>([]);
@@ -70,6 +71,7 @@ export default function AdminPage() {
   const [matchScreenshots, setMatchScreenshots] = useState(''); // one image URL per line
   const [focusEvalMatchId, setFocusEvalMatchId] = useState<number | null>(null);
   const [evalOpenVersion, setEvalOpenVersion] = useState(0);
+  const [reportFocus, setReportFocus] = useState<{ playerId: number; weekStart: string } | null>(null);
 
   // --- Upcoming Match Form State ---
   const [upDate, setUpDate] = useState('');
@@ -221,6 +223,12 @@ export default function AdminPage() {
     setOppScore(String(m.opponent_score ?? 0));
     setMatchReview(m.match_review || '');
     setMatchScreenshots(m.result_screenshots || '');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function openDashboardWeeklyReport(playerId: number, weekStart: string) {
+    setReportFocus({ playerId, weekStart });
+    setActiveTab('Weekly Report');
     window.scrollTo({ top: 0, behavior: 'smooth' });
   }
 
@@ -384,13 +392,19 @@ export default function AdminPage() {
         {/* Tab System */}
         <div className="flex border-b border-gray-800 mb-8 overflow-x-auto">
           {TABS.map((tab) => (
-            <button key={tab} onClick={() => { if (tab === 'Player Evaluation') { setFocusEvalMatchId(null); setEvalOpenVersion((n) => n + 1); } setActiveTab(tab); }}
+            <button key={tab} onClick={() => { if (tab === 'Player Evaluation') { setFocusEvalMatchId(null); setEvalOpenVersion((n) => n + 1); } if (tab === 'Weekly Report') setReportFocus(null); setActiveTab(tab); }}
               className={`px-6 py-3 font-bold uppercase tracking-widest transition-colors whitespace-nowrap ${
                 activeTab === tab ? 'text-accent border-b-2 border-accent' : 'text-gray-500 hover:text-gray-300'}`}>
               {tab}
             </button>
           ))}
         </div>
+
+        {activeTab === 'Coach Dashboard' && (
+          <CoachDashboard activeTeam={activeTeam} roster={roster} matches={completedMatches}
+            onEvaluateMatch={openMatchForEvaluation} onOpenMatchLog={() => setActiveTab('Match Log')}
+            onOpenReport={openDashboardWeeklyReport} onOpenReports={() => { setReportFocus(null); setActiveTab('Weekly Report'); }} />
+        )}
 
         {activeTab === 'Guide' && (
           <div className="bg-[#1a1a1a]/80 backdrop-blur p-8 rounded-xl border border-gray-800 shadow-xl">
@@ -641,7 +655,9 @@ export default function AdminPage() {
         )}
 
         {activeTab === 'Weekly Report' && (
-          <WeeklyReportPanel key={activeTeam} activeTeam={activeTeam} roster={roster} />
+          <WeeklyReportPanel key={`${activeTeam}-${reportFocus?.playerId ?? 'all'}-${reportFocus?.weekStart ?? 'latest'}`}
+            activeTeam={activeTeam} roster={roster} initialPlayerId={reportFocus?.playerId}
+            initialWeekStart={reportFocus?.weekStart} />
         )}
       </div>
     </main>
