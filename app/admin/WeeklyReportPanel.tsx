@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import { formatWeek, weekStartOf } from '../../lib/weeklyKpi';
+import WeeklyImprovementTargets from './WeeklyImprovementTargets';
 
 type PlayerSummary = { id: number; ign: string; role?: string };
 type Props = { activeTeam: string; roster: PlayerSummary[]; initialPlayerId?: number; initialWeekStart?: string };
@@ -145,6 +146,14 @@ export default function WeeklyReportPanel({ activeTeam, roster, initialPlayerId,
                 className={`${fieldClass} mt-2 resize-y`} />
             </label>
             <p className="mt-3 text-xs text-yellow-200/80">These comments will be visible on the public Evaluation page. Avoid private or sensitive personal details.</p>
+            <WeeklyImprovementTargets
+              activeTeam={activeTeam}
+              playerId={playerId ? Number(playerId) : null}
+              playerIgn={players.find((player) => String(player.id) === playerId)?.ign || ''}
+              reportWeek={weekStart}
+              canManage={isManager}
+            />
+
             {error && <p role="alert" className="mt-4 rounded-lg border border-red-800 bg-red-950/30 p-3 text-sm text-red-300">{error}</p>}
             {notice && <p role="status" className="mt-4 rounded-lg border border-green-800 bg-green-950/30 p-3 text-sm text-green-300">{notice}</p>}
             <div className="mt-6 flex flex-wrap gap-3">
