@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { supabase } from '../../lib/supabase';
 import CoachPlayerInformation from './CoachPlayerInformation';
+import MonthlyPerformanceReports from './MonthlyPerformanceReports';
 import { formatWeek } from '../../lib/weeklyKpi';
 import { lastCompletedWeekStart, makeCoachDashboardSummary, type CoachAssessmentRow, type CoachReportRow } from '../../lib/coachDashboard';
 import type { ProgressMatch, ProgressPlayer } from '../../lib/matchEvaluationProgress';
@@ -89,6 +90,8 @@ export default function CoachDashboard({ activeTeam, roster, matches, onEvaluate
             className="rounded-lg border border-gray-600 px-4 py-2 text-xs font-black uppercase text-gray-200 hover:border-accent disabled:opacity-50">Refresh data</button>
         </div>
       </header>
+
+      <MonthlyPerformanceReports activeTeam={activeTeam} managementRole={managementRole} />
 
       <CoachPlayerInformation activeTeam={activeTeam} managementRole={managementRole} />
 
