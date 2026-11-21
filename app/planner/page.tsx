@@ -11,7 +11,7 @@ const TEAMS = ['DAG Ladies', 'DAG Montrix'];
 const NAV = [
   { href: '/', label: 'Dashboard' },
   { href: '/roster', label: 'Roster' },
-  { href: '/team-performance', label: 'Team Performance' },
+  { href: '/achievement', label: 'Achievement' },
   { href: '/evaluation', label: 'Evaluation' },
   { href: '/planner', label: 'Planner' },
 ];
@@ -59,6 +59,19 @@ export default function PlannerPage() {
   const [loadedId, setLoadedId] = useState<number | null>(null);
   const [plans, setPlans] = useState<any[]>([]);
   const [saving, setSaving] = useState(false);
+  const [canManage, setCanManage] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    async function checkManagement() {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) { if (active) setCanManage(false); return; }
+      const { data, error } = await supabase.rpc('is_approved_admin');
+      if (active) setCanManage(!error && data === true);
+    }
+    void checkManagement();
+    return () => { active = false; };
+  }, []);
 
   const svgRef = useRef<SVGSVGElement>(null);
   const dragId = useRef<string | null>(null);
@@ -140,6 +153,7 @@ export default function PlannerPage() {
   const setTeamVisible = (team: 'blue' | 'red', v: boolean) => setTokens((prev) => prev.map((t) => (t.team === team ? { ...t, visible: v } : t)));
 
   async function savePlan(asNew: boolean) {
+    if (!canManage) { alert('Only approved managers can save plans.'); return; }
     if (!planName.trim()) { alert('Give the plan a name first.'); return; }
     setSaving(true);
     const payload = {
@@ -171,6 +185,7 @@ export default function PlannerPage() {
   }
 
   async function deletePlan(id: number) {
+    if (!canManage) { alert('Only approved managers can delete plans.'); return; }
     if (!confirm('Delete this plan?')) return;
     const { error } = await supabase.from('planner_plans').delete().eq('id', id);
     if (error) { alert('Delete failed: ' + error.message); return; }
@@ -312,14 +327,18 @@ export default function PlannerPage() {
                 <input type="text" placeholder="Plan name *" value={planName} onChange={(e) => setPlanName(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none" />
                 <input type="text" placeholder="Opponent (optional)" value={opponent} onChange={(e) => setOpponent(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none" />
                 <textarea rows={4} placeholder="Notes: rotations, objective timings..." value={notes} onChange={(e) => setNotes(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none resize-none" />
-                <div className="flex gap-2">
-                  <button onClick={() => savePlan(false)} disabled={saving} className="flex-1 bg-accent hover:bg-accent-dark font-bold uppercase text-sm py-2 rounded transition-colors">
-                    {saving ? 'Saving...' : loadedId ? 'Update' : 'Save'}
-                  </button>
-                  {loadedId && (
-                    <button onClick={() => savePlan(true)} disabled={saving} className="flex-1 bg-gray-700 hover:bg-gray-600 font-bold uppercase text-sm py-2 rounded transition-colors">Save as new</button>
-                  )}
-                </div>
+                {canManage ? (
+                  <div className="flex gap-2">
+                    <button onClick={() => savePlan(false)} disabled={saving} className="flex-1 bg-accent hover:bg-accent-dark font-bold uppercase text-sm py-2 rounded transition-colors">
+                      {saving ? 'Saving...' : loadedId ? 'Update' : 'Save'}
+                    </button>
+                    {loadedId && (
+                      <button onClick={() => savePlan(true)} disabled={saving} className="flex-1 bg-gray-700 hover:bg-gray-600 font-bold uppercase text-sm py-2 rounded transition-colors">Save as new</button>
+                    )}
+                  </div>
+                ) : (
+                  <p className="rounded-lg border border-pink-400/30 bg-pink-400/10 p-2 text-xs text-gray-200">Public preview: edit the map here, but only approved managers can save plans. <Link href="/admin/login" className="text-pink-300 underline">Management login</Link></p>
+                )}
                 <button onClick={newPlan} className="text-xs text-gray-400 hover:text-white mt-1">+ Start a blank plan</button>
               </div>
             </div>
@@ -334,7 +353,7 @@ export default function PlannerPage() {
                       <p className="font-bold text-sm truncate">{p.name}</p>
                       <p className="text-[10px] text-gray-500 truncate">{p.opponent ? `vs ${p.opponent} · ` : ''}{new Date(p.created_at).toLocaleDateString('en-GB')}</p>
                     </button>
-                    <button onClick={() => deletePlan(p.id)} className="bg-red-900/60 hover:bg-red-800 text-red-300 text-xs px-2 py-1 rounded">Del</button>
+                    {canManage && <button onClick={() => deletePlan(p.id)} className="bg-red-900/60 hover:bg-red-800 text-red-300 text-xs px-2 py-1 rounded">Del</button>}
                   </div>
                 ))}
               </div>

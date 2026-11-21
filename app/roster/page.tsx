@@ -11,7 +11,7 @@ const TEAMS = ['DAG Ladies', 'DAG Montrix'];
 const NAV = [
   { href: '/', label: 'Dashboard' },
   { href: '/roster', label: 'Roster' },
-  { href: '/team-performance', label: 'Team Performance' },
+  { href: '/achievement', label: 'Achievement' },
   { href: '/evaluation', label: 'Evaluation' },
   { href: '/planner', label: 'Planner' },
 ];

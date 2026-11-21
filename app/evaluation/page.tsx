@@ -5,13 +5,15 @@ import Link from 'next/link';
 import SiteDecor from '../../lib/SiteDecor';
 import { getTeamTheme, themeStyle } from '../../lib/teamTheme';
 import { supabase } from '../../lib/supabase';
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
+import WeeklyPerformanceChart from './WeeklyPerformanceChart';
+import { WEEKLY_METRICS, hasSixRatings, weightedScore, weeklyReviewsFromMatches, formatWeek, type WeeklyReview } from '../../lib/weeklyKpi';
 
 const TEAMS = ['DAG Ladies', 'DAG Montrix'];
 const NAV = [
   { href: '/', label: 'Dashboard' },
   { href: '/roster', label: 'Roster' },
-  { href: '/team-performance', label: 'Team Performance' },
+  { href: '/achievement', label: 'Achievement' },
   { href: '/evaluation', label: 'Evaluation' },
   { href: '/planner', label: 'Planner' },
 ];
@@ -57,7 +59,11 @@ export default function EvaluationPage() {
   const [summary, setSummary] = useState<any>(null);
   const [totalTeamMatches, setTotalTeamMatches] = useState(0);
   const [matchIds, setMatchIds] = useState<number[]>([]);
+  const [matchDates, setMatchDates] = useState<Record<number, string>>({});
   const [loadingStats, setLoadingStats] = useState(false);
+  const selectionRequest = useRef(0);
+  const [weeklyReviews, setWeeklyReviews] = useState<WeeklyReview[]>([]);
+  const [coachWeeklyReports, setCoachWeeklyReports] = useState<Array<{ id: number; week_start: string; coach_comment: string; improvements: string }>>([]);
   const [staffAttendance, setStaffAttendance] = useState<Record<string, { attended: number; absent: number; rate: number; lastReason: string }>>({});
 
   useEffect(() => {
@@ -70,7 +76,7 @@ export default function EvaluationPage() {
       if (rErr) console.error('Roster error:', rErr);
 
       const { data: matchRows, error: mErr } = await supabase
-        .from('matches').select('id').eq('team', activeTeam).eq('status', 'completed');
+        .from('matches').select('id,match_date').eq('team', activeTeam).eq('status', 'completed');
       if (mErr) console.error('Matches error:', mErr);
       const ids = (matchRows || []).map((m: any) => m.id);
 
@@ -101,17 +107,24 @@ export default function EvaluationPage() {
       if (cancelled) return;
       setRoster(rosterData || []);
       setMatchIds(ids);
+      setMatchDates(Object.fromEntries((matchRows || []).map((m: any) => [m.id, m.match_date])));
       setTotalTeamMatches(ids.length);
       setStaffAttendance(att);
       setLoading(false);
     }
 
+    selectionRequest.current += 1;
     setSelectedPlayer(null);
     setPlayerMatches([]);
+    setWeeklyReviews([]);
+    setCoachWeeklyReports([]);
     setSummary(null);
     fetchAll();
     return () => { cancelled = true; };
   }, [activeTeam, teamReady]);
+
+  // There is no separate weekly evaluation form. Match assessments are the
+  // single source of truth and are averaged by their real match dates below.
 
   const getEvaluationStatus = (score: number) => {
     if (score >= 4.0)
@@ -122,10 +135,25 @@ export default function EvaluationPage() {
   };
 
   const handlePlayerClick = async (player: any) => {
-    if (selectedPlayer?.id === player.id) { setSelectedPlayer(null); setPlayerMatches([]); setSummary(null); return; }
+    const request = ++selectionRequest.current;
+    if (selectedPlayer?.id === player.id) { setSelectedPlayer(null); setPlayerMatches([]); setWeeklyReviews([]); setCoachWeeklyReports([]); setSummary(null); setLoadingStats(false); return; }
     setSelectedPlayer(player);
     setSummary(null);
+    setWeeklyReviews([]);
+    setCoachWeeklyReports([]);
     setLoadingStats(true);
+
+    // Weekly narrative reports are separate from the automatic numeric KPI graph.
+    // Anonymous visitors can read coach-approved reports for this player only.
+    void supabase.from('weekly_player_reports')
+      .select('id,week_start,coach_comment,improvements')
+      .eq('player_id', player.id).eq('team', activeTeam)
+      .order('week_start', { ascending: false }).limit(12)
+      .then(({ data, error }) => {
+        if (request !== selectionRequest.current) return;
+        if (error && !['PGRST205', '42P01'].includes(error.code || '')) console.warn('Coach reports unavailable:', error.message);
+        setCoachWeeklyReports(data || []);
+      });
 
     let allStats: any[] = [];
     if (matchIds.length > 0) {
@@ -138,6 +166,9 @@ export default function EvaluationPage() {
       if (error) console.error('Stats error:', error);
       allStats = data || [];
     }
+    if (request !== selectionRequest.current) return;
+
+    setWeeklyReviews(weeklyReviewsFromMatches(allStats, matchDates, Number(player.id), activeTeam));
 
     if (allStats.length > 0) {
       // Legacy rows (status = null) → treat as 'played'
@@ -146,16 +177,15 @@ export default function EvaluationPage() {
       const attendedRows = allStats.filter((s) => !s.status || s.status === 'played' || s.status === 'bench');
       const absentRows = allStats.filter((s) => s.status === 'absent');
 
-      let totalEval = 0;
-      playedRows.forEach((s) => {
-        totalEval += ((s.macro_score || 3) + (s.micro_score || 3) + (s.kda_score || 3) + (s.mentality_score || 3)) / 4;
-      });
-      const coachAvg = playedRows.length > 0 ? totalEval / playedRows.length : 0;
+      const assessedRows = playedRows.filter(hasSixRatings);
+      const coachAvg = assessedRows.length > 0
+        ? assessedRows.reduce((total, row) => total + weightedScore(row), 0) / assessedRows.length
+        : null;
 
       const attended = attendedRows.length;
       const attendanceRate = totalTeamMatches > 0 ? Math.round((attended / totalTeamMatches) * 100) : 0;
       const attendanceScore = 1 + (attendanceRate / 100) * 4;
-      const overallEvaluation = coachAvg * COACH_RATING_WEIGHT + attendanceScore * ATTENDANCE_WEIGHT;
+      const overallEvaluation = coachAvg === null ? null : coachAvg * COACH_RATING_WEIGHT + attendanceScore * ATTENDANCE_WEIGHT;
 
       setSummary({
         played: playedRows.length,
@@ -164,6 +194,7 @@ export default function EvaluationPage() {
         benched: attendedRows.filter((s) => s.status === 'bench').length,
         absent: absentRows.length,
         coachAvg,
+        assessed: assessedRows.length,
         attendanceScore,
         overallEvaluation,
         totalKills: playedRows.reduce((a, s) => a + (s.kills || 0), 0),
@@ -174,16 +205,17 @@ export default function EvaluationPage() {
       const last5 = allStats.slice(0, 5);
       const { data: matchesData, error: mErr } = await supabase.from('matches').select('*').in('id', last5.map((s) => s.match_id));
       if (mErr) console.error('Matches error:', mErr);
+      if (request !== selectionRequest.current) return;
 
       setPlayerMatches(last5.map((stat) => {
         const m = matchesData?.find((m) => m.id === stat.match_id);
-        const matchAvg = ((stat.macro_score || 3) + (stat.micro_score || 3) + (stat.kda_score || 3) + (stat.mentality_score || 3)) / 4;
+        const matchAvg = (!stat.status || stat.status === 'played') && hasSixRatings(stat) ? weightedScore(stat) : null;
         return { ...stat, match: m || null, matchEvaluation: matchAvg };
       }));
     } else {
       setSummary({
         played: 0, attended: 0, attendanceRate: 0, benched: 0, absent: 0,
-        coachAvg: 0, attendanceScore: 1, overallEvaluation: 0,
+        coachAvg: null, assessed: 0, attendanceScore: 1, overallEvaluation: null,
         totalKills: 0, totalDeaths: 0, totalAssists: 0,
       });
       setPlayerMatches([]);
@@ -195,7 +227,7 @@ export default function EvaluationPage() {
   const staffOnly = roster.filter(isStaffRole);
 
   let currentGlow = 'from-transparent via-transparent';
-  if (selectedPlayer && summary) currentGlow = getEvaluationStatus(summary.overallEvaluation).glow;
+  if (selectedPlayer && summary?.overallEvaluation !== null && summary?.overallEvaluation !== undefined) currentGlow = getEvaluationStatus(summary.overallEvaluation).glow;
   else if (selectedPlayer && loadingStats) currentGlow = 'from-accent/20 via-accent/5 animate-pulse';
 
   return (
@@ -243,7 +275,7 @@ export default function EvaluationPage() {
         {/* Player selection */}
         <div className="w-full">
           <h2 className="text-2xl font-bold mb-1 text-gray-100 uppercase tracking-wider">Player Evaluation</h2>
-          <p className="text-xs text-gray-500 mb-5 border-b border-gray-800/50 pb-3">Select a player to view their attendance, ratings and match breakdown.</p>
+          <p className="text-xs text-gray-500 mb-5 border-b border-gray-800/50 pb-3">Select a player to view attendance, ratings, weekly KPI graphs, and match breakdown.</p>
           {loading ? (
             <p className="text-gray-500 italic py-10 text-center animate-pulse">Loading roster...</p>
           ) : playersOnly.length === 0 ? (
@@ -271,7 +303,7 @@ export default function EvaluationPage() {
 
         {/* Player detail */}
         {selectedPlayer !== null && (() => {
-          const overallStatus = getEvaluationStatus(summary?.overallEvaluation || 0);
+          const overallStatus = summary?.overallEvaluation == null ? null : getEvaluationStatus(summary.overallEvaluation);
           return (
             <div className="w-full mt-10 bg-[#1a1a1a]/90 backdrop-blur-xl p-6 md:p-8 rounded-2xl border-t-4 border-accent shadow-2xl animate-fadeIn relative overflow-hidden">
               <div className="flex justify-between items-start border-b border-gray-800/50 pb-6 gap-4 relative z-10">
@@ -312,15 +344,24 @@ export default function EvaluationPage() {
                       </div>
                     </div>
 
-                    <div className={`p-6 rounded-xl border flex flex-col items-center justify-center text-center shadow-lg backdrop-blur ${overallStatus.bg}`}>
+                    <div className={`p-6 rounded-xl border flex flex-col items-center justify-center text-center shadow-lg backdrop-blur ${overallStatus?.bg || 'border-gray-700 bg-gray-900/40'}`}>
                       <h4 className="text-gray-300 text-xs font-bold mb-2 uppercase tracking-widest">Overall Evaluation</h4>
-                      <p className={`text-5xl font-black drop-shadow-md ${overallStatus.color}`}>
-                        {summary.overallEvaluation.toFixed(1)} <span className="text-xl text-white/50">/ 5.0</span>
-                      </p>
-                      <p className={`mt-2 font-black uppercase tracking-wider px-3 py-1 rounded-full bg-black/40 text-xs ${overallStatus.color}`}>{overallStatus.label}</p>
-                      <p className="text-[10px] text-gray-400 mt-2 leading-tight">
-                        Coach {summary.coachAvg.toFixed(1)} ({Math.round(COACH_RATING_WEIGHT * 100)}%) · Attendance {summary.attendanceRate}% ({Math.round(ATTENDANCE_WEIGHT * 100)}%)
-                      </p>
+                      {overallStatus ? (
+                        <>
+                          <p className={`text-5xl font-black drop-shadow-md ${overallStatus.color}`}>
+                            {summary.overallEvaluation.toFixed(1)} <span className="text-xl text-white/50">/ 5.0</span>
+                          </p>
+                          <p className={`mt-2 font-black uppercase tracking-wider px-3 py-1 rounded-full bg-black/40 text-xs ${overallStatus.color}`}>{overallStatus.label}</p>
+                          <p className="text-[10px] text-gray-400 mt-2 leading-tight">
+                            Coach {summary.coachAvg.toFixed(1)} ({Math.round(COACH_RATING_WEIGHT * 100)}%) · Attendance {summary.attendanceRate}% ({Math.round(ATTENDANCE_WEIGHT * 100)}%)
+                          </p>
+                        </>
+                      ) : (
+                        <>
+                          <p className="text-xl font-black text-gray-300">Not rated yet</p>
+                          <p className="mt-2 text-xs text-gray-400">A coach must score all six categories in a completed match.</p>
+                        </>
+                      )}
                     </div>
 
                     <div className="bg-[#121212]/80 backdrop-blur p-6 rounded-xl border border-gray-800 flex flex-col justify-center items-center shadow-lg">
@@ -333,11 +374,49 @@ export default function EvaluationPage() {
                     </div>
                   </div>
 
+                  <WeeklyPerformanceChart
+                    playerName={selectedPlayer.ign}
+                    reviews={weeklyReviews}
+                    loading={loadingStats}
+                    error={''}
+                  />
+
+                  <section className="mt-9 rounded-2xl border border-accent/30 bg-[#131013]/90 p-5 md:p-7">
+                    <div className="mb-5 flex flex-col justify-between gap-2 border-b border-gray-800 pb-4 sm:flex-row sm:items-end">
+                      <div>
+                        <p className="text-[11px] font-black uppercase tracking-[0.22em] text-accent">Written by approved coaches</p>
+                        <h4 className="mt-1 text-xl font-black uppercase">Weekly Coach Reports</h4>
+                      </div>
+                      <span className="text-xs text-gray-500">Feedback &amp; next-week priorities</span>
+                    </div>
+                    {coachWeeklyReports.length === 0 ? (
+                      <p className="rounded-xl border border-dashed border-gray-700 p-5 text-sm text-gray-400">No weekly coach reports have been published for this player yet.</p>
+                    ) : (
+                      <div className="space-y-4">
+                        {coachWeeklyReports.map((report) => (
+                          <article key={report.id} className="rounded-xl border border-gray-700 bg-[#1b1b1b] p-5 md:p-6">
+                            <h5 className="mb-4 text-sm font-black uppercase tracking-wider text-accent">Week of {formatWeek(report.week_start)}</h5>
+                            <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
+                              <div className="rounded-lg border border-gray-800 bg-[#101010] p-4">
+                                <p className="mb-2 text-xs font-black uppercase tracking-wider text-green-400">Coach Comments</p>
+                                <p className="whitespace-pre-wrap break-words text-sm leading-6 text-gray-200">{report.coach_comment}</p>
+                              </div>
+                              <div className="rounded-lg border border-gray-800 bg-[#101010] p-4">
+                                <p className="mb-2 text-xs font-black uppercase tracking-wider text-yellow-400">What to Improve</p>
+                                <p className="whitespace-pre-wrap break-words text-sm leading-6 text-gray-200">{report.improvements}</p>
+                              </div>
+                            </div>
+                          </article>
+                        ))}
+                      </div>
+                    )}
+                  </section>
+
                   <div className="mt-8">
                     <h4 className="text-xl font-black mb-4 uppercase border-b border-gray-800/50 pb-2 text-transparent bg-clip-text bg-gradient-to-r from-gray-100 to-gray-400 tracking-widest">Match-by-Match Breakdown</h4>
                     <div className="flex flex-col gap-4">
                       {playerMatches.map((log) => {
-                        const matchStatus = getEvaluationStatus(log.matchEvaluation);
+                        const matchStatus = log.matchEvaluation === null ? null : getEvaluationStatus(log.matchEvaluation);
                         const isAbsent = log.status === 'absent';
                         const isBench = log.status === 'bench';
                         return (
@@ -369,16 +448,25 @@ export default function EvaluationPage() {
                                 <div className="flex-1">
                                   <p className="text-[10px] text-gray-400 uppercase tracking-widest mb-2 border-b border-gray-800 pb-1">Coach Ratings</p>
                                   <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-sm font-bold bg-black/30 p-3 rounded border border-gray-800/50">
-                                    {[['Macro', log.macro_score], ['Micro', log.micro_score], ['KDA', log.kda_score], ['Mental', log.mentality_score]].map(([l, v]: any) => (
-                                      <div key={l} className="flex justify-between items-center text-gray-300"><span>{l}:</span> <span className="text-white text-base bg-gray-900 px-2 rounded">{v}<span className="text-xs text-gray-500">/5</span></span></div>
+                                    {WEEKLY_METRICS.map((metric) => (
+                                      <div key={metric.key} className="flex justify-between items-center gap-2 text-gray-300">
+                                        <span>{metric.label}:</span>
+                                        <span className="text-white text-base bg-gray-900 px-2 rounded">
+                                          {typeof log[metric.key] === 'number' && log[metric.key] >= 1 && log[metric.key] <= 5 ? `${log[metric.key]}/5` : '—'}
+                                        </span>
+                                      </div>
                                     ))}
                                   </div>
                                   <p className="text-xs text-gray-400 mt-3 font-bold tracking-wider">Game KDA: <span className="text-green-400 text-base">{log.kills}/{log.deaths}/{log.assists}</span></p>
                                 </div>
-                                <div className={`flex-shrink-0 flex flex-col justify-center items-center w-36 border-l-4 p-4 shadow-inner rounded ${matchStatus.bg.split(' ')[1]} bg-black/40`}>
+                                <div className={`flex-shrink-0 flex flex-col justify-center items-center w-36 border-l-4 p-4 shadow-inner rounded ${matchStatus ? matchStatus.bg.split(' ')[1] : 'border-gray-700'} bg-black/40`}>
                                   <span className="text-[10px] uppercase text-gray-400 font-bold tracking-widest mb-1">Match Eval</span>
-                                  <span className={`text-4xl font-black drop-shadow ${matchStatus.color}`}>{log.matchEvaluation.toFixed(1)}</span>
-                                  <span className={`text-[10px] font-black uppercase mt-2 text-center tracking-wider ${matchStatus.color}`}>{matchStatus.label}</span>
+                                  {matchStatus ? (
+                                    <>
+                                      <span className={`text-4xl font-black drop-shadow ${matchStatus.color}`}>{log.matchEvaluation.toFixed(2)}</span>
+                                      <span className={`text-[10px] font-black uppercase mt-2 text-center tracking-wider ${matchStatus.color}`}>{matchStatus.label}</span>
+                                    </>
+                                  ) : <span className="text-xs text-gray-400 text-center">Not rated (legacy match)</span>}
                                 </div>
                               </div>
                             )}
