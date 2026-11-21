@@ -14,10 +14,11 @@ type Props = {
   onOpenMatchLog: () => void;
   onOpenReport: (playerId: number, weekStart: string) => void;
   onOpenReports: () => void;
+  canEdit?: boolean;
 };
 const card = 'rounded-2xl border border-gray-800 bg-[#1a1a1a]/90 p-5 md:p-6';
 
-export default function CoachDashboard({ activeTeam, roster, matches, onEvaluateMatch, onOpenMatchLog, onOpenReport, onOpenReports }: Props) {
+export default function CoachDashboard({ activeTeam, roster, matches, onEvaluateMatch, onOpenMatchLog, onOpenReport, onOpenReports, canEdit = true }: Props) {
   const [assessmentRows, setAssessmentRows] = useState<CoachAssessmentRow[]>([]);
   const [reportRows, setReportRows] = useState<CoachReportRow[]>([]);
   const [loading, setLoading] = useState(true);
@@ -115,7 +116,7 @@ export default function CoachDashboard({ activeTeam, roster, matches, onEvaluate
                   return <div key={match.id} className="rounded-xl border border-gray-700 bg-black/30 p-4">
                     <div className="flex items-center justify-between gap-3">
                       <div className="min-w-0"><p className="truncate font-bold">DAG vs {match.opponent_name}</p><p className="mt-1 text-xs text-gray-500">{match.match_date} · {progress.completed}/{progress.total} players complete</p></div>
-                      <button type="button" onClick={() => onEvaluateMatch(match.id)} className="shrink-0 rounded-lg bg-accent px-3 py-2 text-xs font-black text-white hover:brightness-110">Continue</button>
+                      {canEdit && <button type="button" onClick={() => onEvaluateMatch(match.id)} className="shrink-0 rounded-lg bg-accent px-3 py-2 text-xs font-black text-white hover:brightness-110">Continue</button>}
                     </div>
                     <div className="mt-3 h-2 overflow-hidden rounded-full bg-gray-800">
                       <div className="h-full rounded-full bg-accent" style={{ width: String(percentage) + '%' }} />
@@ -138,7 +139,7 @@ export default function CoachDashboard({ activeTeam, roster, matches, onEvaluate
                 : <div className="mt-4 max-h-[430px] space-y-2 overflow-y-auto pr-1">
                   {dashboard.missingReports.map((player) => <div key={player.id} className="flex items-center justify-between gap-3 rounded-xl border border-gray-700 bg-black/30 px-4 py-3">
                     <div className="min-w-0"><p className="truncate text-sm font-bold">{player.ign}</p><p className="text-[11px] text-gray-500">{player.role || 'Player'} · No report for this week</p></div>
-                    <button type="button" onClick={() => onOpenReport(player.id, lastWeek)} className="shrink-0 rounded-lg border border-accent/60 px-3 py-2 text-xs font-bold text-accent hover:bg-accent/10">Write report</button>
+                    {canEdit && <button type="button" onClick={() => onOpenReport(player.id, lastWeek)} className="shrink-0 rounded-lg border border-accent/60 px-3 py-2 text-xs font-bold text-accent hover:bg-accent/10">Write report</button>}
                   </div>)}
                 </div>}
             </section>
