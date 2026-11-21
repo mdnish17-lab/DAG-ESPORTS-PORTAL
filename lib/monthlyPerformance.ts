@@ -1,5 +1,6 @@
 import { isStaffMember, type ProgressPlayer } from './matchEvaluationProgress';
-import { hasSixRatings, weightedScore, WEEKLY_METRICS, type WeeklyMetricKey } from './weeklyKpi';
+import { hasSixRatings, weightedScore, WEEKLY_METRICS, weekStartOf, weeklyReviewsFromMatches, type WeeklyMetricKey, type WeeklyReview } from './weeklyKpi';
+import { isMetricKey, isValidTarget, targetProgress, type ImprovementTarget, type TargetStatus } from './improvementTargets';
 
 export type MonthlyMatch = {
   id: number;
@@ -42,6 +43,24 @@ export type MonthlyPlayerRow = {
   metrics: Record<WeeklyMetricKey, number | null>;
 };
 export type MonthlyMatchRow = MonthlyMatch & { ratedPlayers: number; averageKpi: number | null };
+export type MonthlyGoalRow = {
+  id: number;
+  playerId: number;
+  ign: string;
+  fullName: string;
+  role: string;
+  weekStart: string;
+  reportWeekStart: string;
+  metricKey: WeeklyMetricKey;
+  metricLabel: string;
+  target: number;
+  actual: number | null;
+  difference: number | null;
+  status: TargetStatus;
+  assessedMatches: number;
+  focusNote: string;
+};
+export type MonthlyGoalTotals = { total: number; achieved: number; below: number; notAssessed: number };
 export type MonthlyReport = {
   team: string;
   month: string;
@@ -52,6 +71,7 @@ export type MonthlyReport = {
   matches: MonthlyMatchRow[];
   players: MonthlyPlayerRow[];
   weeklyReports: Array<MonthlyWeeklyReport & { ign: string }>;
+  improvementTargets: MonthlyGoalRow[];
   totals: {
     completed: number;
     wins: number;
@@ -62,6 +82,7 @@ export type MonthlyReport = {
     coachAvg: number | null;
     avgAttendancePct: number | null;
     overall: number | null;
+    goalProgress: MonthlyGoalTotals;
   };
 };
 
@@ -99,6 +120,7 @@ export function buildMonthlyReport(input: {
   matches: MonthlyMatch[];
   assessments: MonthlyAssessment[];
   weeklyReports: MonthlyWeeklyReport[];
+  targets?: ImprovementTarget[];
   generatedAt?: string;
 }): MonthlyReport {
   const { start, endExclusive, label } = monthWindow(input.month);
@@ -165,6 +187,77 @@ export function buildMonthlyReport(input: {
     ...row,
     ign: roster.find((player) => player.id === row.player_id)?.ign || '',
   })).sort((a, b) => a.week_start.localeCompare(b.week_start) || a.ign.localeCompare(b.ign));
+  // A target belongs to the month containing its target week's Monday.
+  // For a target on the final Monday, the actual KPI includes the whole
+  // Monday-Sunday week even if its last days fall in the next calendar month.
+  // This does NOT change the monthly match/attendance summaries above.
+  const validGoals = (input.targets || []).filter((target) =>
+    target.team === input.team && target.week_start >= start && target.week_start < endExclusive &&
+    roster.some((player) => player.id === target.player_id) &&
+    isMetricKey(target.metric_key) && isValidTarget(Number(target.target_score))
+  );
+  const goalWeeks = new Set(validGoals.map((target) => target.week_start));
+  const goalMatchDates: Record<number, string> = {};
+  for (const match of input.matches) {
+    if (match.status !== 'completed') continue;
+    const monday = weekStartOf(match.match_date.slice(0, 10));
+    if (goalWeeks.has(monday)) goalMatchDates[match.id] = match.match_date;
+  }
+
+  const newestGoalStats = new Map<string, MonthlyAssessment>();
+  for (const row of input.assessments) {
+    if (!goalMatchDates[row.match_id]) continue;
+    const player = rosterByIgn.get(norm(row.ign));
+    if (!player) continue;
+    const key = row.match_id + '::' + player.id;
+    const previous = newestGoalStats.get(key);
+    if (!previous || row.id > previous.id) newestGoalStats.set(key, row);
+  }
+  const playerWeeklyReviews = new Map<number, WeeklyReview[]>();
+  for (const player of roster) {
+    const stats = [...newestGoalStats.values()].filter((row) =>
+      norm(row.ign) === norm(player.ign));
+    playerWeeklyReviews.set(player.id, weeklyReviewsFromMatches(
+      stats, goalMatchDates, player.id, input.team,
+    ));
+  }
+  const improvementTargets: MonthlyGoalRow[] = validGoals.map((target) => {
+    const player = roster.find((p) => p.id === target.player_id)!;
+    const reviews = playerWeeklyReviews.get(player.id) || [];
+    const progress = targetProgress({
+      ...target, target_score: Number(target.target_score),
+    }, reviews);
+    const week = new Date(target.week_start + 'T12:00:00Z');
+    week.setUTCDate(week.getUTCDate() - 7);
+    const rating = reviews.find((row) => row.week_start === target.week_start);
+    return {
+      id: target.id,
+      playerId: player.id,
+      ign: player.ign,
+      fullName: player.full_name || '',
+      role: player.role || '',
+      weekStart: target.week_start,
+      reportWeekStart: week.toISOString().slice(0, 10),
+      metricKey: target.metric_key,
+      metricLabel: progress.metric_label,
+      target: Number(target.target_score),
+      actual: progress.actual,
+      difference: progress.difference,
+      status: progress.status,
+      assessedMatches: rating?.match_count || 0,
+      focusNote: target.focus_note || '',
+    };
+  }).sort((a, b) =>
+    a.weekStart.localeCompare(b.weekStart) ||
+    a.ign.localeCompare(b.ign) ||
+    a.metricLabel.localeCompare(b.metricLabel) || a.id - b.id
+  );
+  const goalProgress: MonthlyGoalTotals = {
+    total: improvementTargets.length,
+    achieved: improvementTargets.filter((g) => g.status === 'achieved').length,
+    below: improvementTargets.filter((g) => g.status === 'below-target').length,
+    notAssessed: improvementTargets.filter((g) => g.status === 'not-assessed').length,
+  };
   const coachAvg = avg(rated.map((row) => weightedScore(row as Record<WeeklyMetricKey, number>)));
   const playerAttendances = playerRows.flatMap((player) => player.attendancePct === null ? [] : [player.attendancePct]);
   const overallScores = playerRows.flatMap((player) => player.overall === null ? [] : [player.overall]);
@@ -178,6 +271,7 @@ export function buildMonthlyReport(input: {
     matches: matchRows,
     players: playerRows,
     weeklyReports: weeklies,
+    improvementTargets,
     totals: {
       completed: matches.length,
       wins: matches.filter((m) => m.result === 'WIN').length,
@@ -188,6 +282,7 @@ export function buildMonthlyReport(input: {
       coachAvg,
       avgAttendancePct: avg(playerAttendances),
       overall: avg(overallScores),
+      goalProgress,
     },
   };
 }

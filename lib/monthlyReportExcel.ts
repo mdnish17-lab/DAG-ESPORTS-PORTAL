@@ -166,6 +166,12 @@ export function monthlyReportExcel(report: MonthlyReport): Blob {
     ['Average player attendance', percent(report.totals.avgAttendancePct)],
     ['Average player overall / 5', display(report.totals.overall)],
     [],
+    ['WEEKLY IMPROVEMENT TARGETS', 'Value'],
+    ['Targets recorded', report.totals.goalProgress.total],
+    ['Targets achieved', report.totals.goalProgress.achieved],
+    ['Below target', report.totals.goalProgress.below],
+    ['Not assessed', report.totals.goalProgress.notAssessed],
+    [],
     ['SCORING AND ATTENDANCE NOTES'],
     ['Only completed matches inside the selected calendar month are included.'],
     ['Player participation = Played + Benched; absent and unrecorded are not attended.'],
@@ -175,6 +181,9 @@ export function monthlyReportExcel(report: MonthlyReport): Blob {
     ['A player without all six valid ratings receives Not assessed, never a fabricated zero.'],
     ['If no matches were completed in this month, attendance is N/A.'],
     ['Weekly narrative entries are listed by the week-start date falling in this month.'],
+    ['Improvement targets are grouped by the Monday of the target week in this month.'],
+    ['A week crossing into next month uses actual KPI ratings through its Sunday.'],
+    ['Not assessed goals are not failed goals; no KPI ratings were recorded for that week.'],
     ['Private DOB, MLBB IDs, absence reasons and match coaching notes are not exported.'],
   ];
   const headers = ['IGN', 'Full Name', 'Role', 'Completed Matches', 'Played', 'Benched',
@@ -206,11 +215,31 @@ export function monthlyReportExcel(report: MonthlyReport): Blob {
     ['Player IGN', 'Week Starting', 'Coach Comment', 'Improvement Goals'],
     ...report.weeklyReports.map((r) => [r.ign, r.week_start, r.coach_comment || '', r.improvements || '']),
   ];
+  const targetRows: Cell[][] = [
+    ['DAG Esports - Weekly Improvement Targets'], ['Team / Month', name],
+    ['Target-week Monday determines reporting month; actual KPI averages include the full Monday-Sunday week.'],
+    ['Only completed matches with complete six-category player assessments count toward actual scores.'],
+    ['Player IGN', 'Full Name', 'Role', 'Target Week (Monday)', 'Source Report Week',
+      'KPI Category', 'Target / 5', 'Actual / 5', 'Variance', 'Status',
+      'Assessed Matches', 'Coach Focus Note'],
+    ...report.improvementTargets.map((goal) => [
+      goal.ign, goal.fullName, goal.role, goal.weekStart, goal.reportWeekStart,
+      goal.metricLabel, goal.target,
+      goal.actual == null ? 'Not assessed' : goal.actual,
+      goal.difference == null ? 'N/A' : goal.difference,
+      goal.status === 'achieved' ? 'Achieved' :
+        goal.status === 'below-target' ? 'Below Target' : 'Not Assessed',
+      goal.assessedMatches, goal.focusNote,
+    ]),
+  ];
   const sheets: Sheet[] = [
     { name: 'Overview', rows: summary, widths: [47, 32], scoreColumns: [1], percentColumns: [1] },
     { name: 'Players', rows: players, widths: [20, 31, 18, 19, 13, 13, 13, 13, 14, 17, 19, 18, 17, 17, 17, 18, 20, 20, 18], headerRow: 5, scoreColumns: [11, 12, 13, 14, 15, 16, 17, 18], percentColumns: [9] },
     { name: 'Matches', rows: matchRows, widths: [17, 32, 22, 17, 18, 16, 19, 22], headerRow: 5, scoreColumns: [7] },
     { name: 'Weekly Reports', rows: reportRows, widths: [21, 18, 52, 52], headerRow: 5 },
+    { name: 'Improvement Targets', rows: targetRows,
+      widths: [22, 30, 19, 23, 23, 22, 17, 17, 16, 18, 20, 52],
+      headerRow: 5, scoreColumns: [6, 7, 8] },
   ];
 
   const namespace = 'http://schemas.openxmlformats.org/spreadsheetml/2006/main';

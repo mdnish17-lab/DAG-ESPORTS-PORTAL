@@ -162,6 +162,10 @@ export function monthlyReportPdf(report: MonthlyReport): Blob {
   doc.detail('Team coach KPI', rating(report.totals.coachAvg));
   doc.detail('Avg player attendance', pct(report.totals.avgAttendancePct));
   doc.detail('Avg player overall score', rating(report.totals.overall));
+  doc.detail('Weekly KPI improvement goals', String(report.totals.goalProgress.total));
+  doc.detail('Achieved / Below / Unassessed',
+    report.totals.goalProgress.achieved + ' / ' +
+    report.totals.goalProgress.below + ' / ' + report.totals.goalProgress.notAssessed);
   doc.line('KPI scores reflect only played assessments with all six valid 1-5 ratings.', 9);
   doc.line('Overall = 70% coach KPI + 30% attendance score (1-5). Missing ratings remain unassessed.', 9);
   doc.line('Attendance = played + benched; absent/unrecorded do not count. Only completed matches.', 9);
@@ -204,10 +208,27 @@ export function monthlyReportPdf(report: MonthlyReport): Blob {
     doc.line('Improvements: ' + (note.improvements || 'No goals'), 9, false, '#444444', 8);
     doc.line(' ', 4);
   }
+  doc.section('Weekly player improvement targets');
+  doc.line('Each target is assigned to the month containing its target-week Monday. Complete Monday-Sunday actual KPI averages are used, including days falling in the following month.', 9);
+  doc.line('Unassessed means no completed-match assessment with all six valid KPI ratings during the goal week; it is NOT counted as a failed target.', 9);
+  if (!report.improvementTargets.length) {
+    doc.line('No player improvement targets were saved with a target-week Monday in this month.');
+  }
+  for (const goal of report.improvementTargets) {
+    doc.line(goal.ign + (goal.fullName ? '  (' + goal.fullName + ')' : '') +
+      '  |  Week of ' + goal.weekStart, 10, true, '#6d1e51');
+    doc.line(goal.metricLabel + '  |  Goal ' + goal.target.toFixed(1) +
+      ' / 5  |  Actual ' + rating(goal.actual) +
+      '  |  ' + (goal.status === 'achieved' ? 'Achieved' : goal.status === 'below-target' ? 'Below Target' : 'Not Assessed'), 9, false, '#333333', 8);
+    doc.line('Based on ' + goal.assessedMatches + ' fully rated match(es)  |  Coach report week: ' + goal.reportWeekStart, 9, false, '#595959', 8);
+    if (goal.focusNote) doc.line('Coach focus: ' + goal.focusNote, 9, false, '#595959', 8);
+    doc.line(' ', 4);
+  }
   doc.section('Data and privacy notes');
   doc.line('Only completed matches and latest match/player assessment records are counted.', 9);
   doc.line('Roster reflects current membership; historical departed players may be omitted.', 9);
   doc.line('No exact date of birth, location, MLBB account identifiers or private absence reasons are exported.', 9);
   doc.line('Data is generated on demand from Supabase; missing ratings or missing attendance are not estimates.', 9);
+  doc.line('Improvement targets never change original KPI ratings or historical match results.', 9);
   return buildPdf(doc.getPages());
 }

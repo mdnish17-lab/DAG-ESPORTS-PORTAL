@@ -7,13 +7,15 @@ A new **Monthly Performance Reports** panel appears at the top of Admin → Coac
 2. Select DAG Ladies or DAG Montrix at the top of the Admin Panel.
 3. Choose the reporting month (defaults to the previous completed calendar month in Malaysia).
 4. Click **Generate monthly report**.
-5. Click **Download PDF** for a paginated print-friendly report or **Download Excel** for a four-sheet `.xlsx` workbook.
+5. Click **Download PDF** for a paginated print-friendly report or **Download Excel** for a five-sheet `.xlsx` workbook.
 
 ## Contents
 - Overview: completed match counts, wins, losses, draws, weighted team coach KPI, player count, assessed records, average attendance, player overall rating.
 - Players: IGN, full name, role, played / bench / absent / unrecorded counts, attendance percentage, six KPI category averages, coach and overall performance scores.
 - Matches: completed match date, opponent, type, confirmed result, scores, number of fully rated players, match KPI.
 - Weekly Reports: published comments and improvement goals whose *Monday week-start* belongs to the chosen calendar month.
+- Improvement Targets: each player's goal week, source coach report week, target KPI category, target score, actual assessed KPI, variance, achievement status, assessed-match count and coaching focus note.
+- PDF includes a dedicated improvement-target section and summary counts (Achieved / Below Target / Not Assessed).
 
 ## Definitions
 - Date windows are calendar month start inclusive, next month's start exclusive; matches use `match_date`, not evaluation creation time.
@@ -24,7 +26,10 @@ A new **Monthly Performance Reports** panel appears at the top of Admin → Coac
 - Overall rating uses the existing public Evaluation formula: 70% weighted coach KPI + 30% attendance score, where attendance score = 1 + 4 × attendance fraction.
 - Historical duplicate records: the largest assessment ID for a match/IGN is counted only once.
 - The player list reflects the **current roster**, so removed former players are not included. This limitation is stated in the PDF.
-- Generated on demand from read-only queries. No report table, SQL migration, database write or external reporting service.
+- Improvement targets are assigned to the month of their **target-week Monday**. If a goal week crosses into the next month, KPI comparisons include the full Monday–Sunday target week; the monthly completed-match totals still exclude all matches outside the selected month.
+- Actual score = average of correctly scored played assessments in that calendar week. Achieved means actual >= goal; Below Target means actual < goal; Not Assessed means no qualified assessment and is never treated as failure or zero.
+- Target and published focus-note data comes from the existing `weekly_player_targets` table created by SQL 12. SQL 12 must already be applied; the monthly export extension itself requires **no new migration**.
+- Generated on demand from read-only queries. No report table, new SQL migration, database write or external reporting service.
 
 ## Security
 - The panel is visible only to Owner / Manager / Coach roles, which are verified again through Supabase `my_management_role` before report assembly and download.
