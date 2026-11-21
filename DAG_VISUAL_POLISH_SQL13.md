@@ -44,3 +44,10 @@ order by tablename, policyname;
 5. Verify all eight RLS policy definitions, then test Owner / Manager permission boundaries on management site content.
 
 No new database table or storage migration beyond the existing redesign SQL 13.
+
+
+## Global side animation and credit
+- `SiteDecor` is now mounted once in `app/layout.tsx`; the animated DAG ESPORTS text on **both left and right sides**, subtle DAG background logo and **Made by NishiKudo** credit persist on every public and authenticated website route (including Management and login).
+- Decorative layers ignore pointer interactions. On small phones the edge ribbons remain narrow to avoid obstructing content; the credit sits above mobile evaluation Save actions.
+- Individual page instances have been removed to prevent duplicate animation stacks and credits.
+- The side text stops moving only when device accessibility preferences request reduced motion; the static decorations and credit still appear.
