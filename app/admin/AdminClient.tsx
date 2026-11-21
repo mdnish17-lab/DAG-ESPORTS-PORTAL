@@ -52,6 +52,21 @@ export default function AdminPage() {
   }, []);
   const setActiveTeam = (team: string) => { setActiveTeamState(team); localStorage.setItem('dag-active-team', team); };
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>('Coach Dashboard');
+  const [managementRole, setManagementRole] = useState('none');
+  const canRoster = managementRole === 'owner' || managementRole === 'manager';
+  const canMatches = canRoster || managementRole === 'coach';
+  const canDeleteMatches = canRoster;
+  const canEvaluate = canMatches;
+  const canReports = canMatches;
+  const canAchievements = canRoster;
+  useEffect(() => {
+    let cancelled = false;
+    void supabase.rpc('my_management_role').then(({ data, error }) => {
+      if (!cancelled) setManagementRole(error ? 'none' : String(data || 'none'));
+    });
+    return () => { cancelled = true; };
+  }, []);
+
 
   const [roster, setRoster] = useState<any[]>([]);
   const [allMatches, setAllMatches] = useState<any[]>([]);
@@ -111,10 +126,11 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (teamReady) loadData();
-  }, [activeTeam, teamReady]);
+  }, [activeTeam, teamReady, managementRole]);
 
   async function loadData() {
-    const { data: players, error: pErr } = await supabase.from('players').select('*').eq('team', activeTeam).order('id');
+    const playerSource = canRoster ? 'players' : 'public_player_profiles';
+    const { data: players, error: pErr } = await supabase.from(playerSource).select('*').eq('team', activeTeam).order('id');
     if (pErr) console.error('Players error:', pErr);
     setRoster(players || []);
 
@@ -124,26 +140,9 @@ export default function AdminPage() {
       .eq('team', activeTeam)
       .order('match_date', { ascending: false });
     if (mErr) console.error('Matches error:', mErr);
-    if (matches) {
-      const today = new Date().toISOString().split('T')[0];
-      const needsTransfer = matches.filter((m) => m.status === 'upcoming' && m.match_date < today);
-      if (needsTransfer.length > 0) {
-        for (const m of needsTransfer) {
-          const { error } = await supabase.from('matches').update({ status: 'completed', result: 'DRAW' }).eq('id', m.id);
-          if (error) console.error('Auto-transfer error:', error);
-        }
-        const { data: refreshed } = await supabase
-          .from('matches')
-          .select('*')
-          .eq('team', activeTeam)
-          .order('match_date', { ascending: false });
-        setAllMatches(refreshed || []);
-      } else {
-        setAllMatches(matches);
-      }
-    } else {
-      setAllMatches([]);
-    }
+    // Never fabricate a score or DRAW because a scheduled date has passed.
+    // An overdue match remains scheduled until management explicitly confirms a result.
+    setAllMatches(matches || []);
 
     const { data: ach, error: aErr } = await supabase
       .from('team_achievements')
@@ -155,7 +154,8 @@ export default function AdminPage() {
   }
 
   const completedMatches = allMatches.filter((m) => m.status === 'completed');
-  const upcomingMatchesList = allMatches.filter((m) => m.status === 'upcoming');
+  const upcomingMatchesList = allMatches.filter((m) => ['upcoming', 'awaiting_result', 'cancelled'].includes(m.status));
+  const todayMY = new Date(Date.now() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
 
   const result = (() => {
     const d = Number(dagScore), o = Number(oppScore);
@@ -168,7 +168,9 @@ export default function AdminPage() {
   // never deleted, reset or overwritten when a coach edits the match log.
   async function handleSaveMatch(e: React.FormEvent) {
     e.preventDefault();
+    if (!canMatches) { alert('Only an authorized coach or manager can edit matches.'); return; }
     if (!matchDate || !opponentName.trim()) { alert('Fill in the date and opponent.'); return; }
+    if (dagScore.trim() === '' || oppScore.trim() === '') { alert('Enter both confirmed match scores. No default DRAW result will be used.'); return; }
     const ourScore = Number(dagScore), theirScore = Number(oppScore);
     if (![ourScore, theirScore].every((value) => Number.isInteger(value) && value >= 0)) {
       alert('Both match scores must be non-negative whole numbers.');
@@ -212,7 +214,35 @@ export default function AdminPage() {
     setDagScore('0'); setOppScore('0'); setMatchReview(''); setMatchScreenshots('');
   }
 
+  async function changeScheduledStatus(m: any, newStatus: 'awaiting_result' | 'cancelled' | 'upcoming') {
+    if (!canMatches) return;
+    const action = newStatus === 'cancelled' ? 'cancel' : newStatus === 'upcoming' ? 'restore' : 'mark as awaiting result';
+    if (!confirm(`Do you want to ${action} DAG vs ${m.opponent_name}?`)) return;
+    const { error } = await supabase.from('matches')
+      .update({ status: newStatus, result: 'PENDING' }).eq('id', m.id);
+    if (error) { alert('Could not update scheduled match: ' + error.message); return; }
+    void loadData();
+  }
+
+  // Called explicitly by management, never by the calendar or an automatic job.
+  async function finishScheduledMatch(m: any) {
+    if (!canMatches) { alert('You do not have permission to record match results.'); return; }
+    if (!confirm(`Record the actual result for DAG vs ${m.opponent_name}? Enter both scores in Match Log before saving.`)) return;
+    setEditingMatchId(m.id);
+    setMatchDate(m.match_date);
+    setMatchType(m.match_type || 'Scrim');
+    setOpponentName(m.opponent_name);
+    setOpponentLogo(m.opponent_logo || '');
+    setDagScore('');
+    setOppScore('');
+    setMatchReview(m.match_review || '');
+    setMatchScreenshots(m.result_screenshots || '');
+    setActiveTab('Match Log');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
   function startEditMatch(m: any) {
+    if (!canMatches) return;
     setActiveTab('Match Log');
     setEditingMatchId(m.id);
     setMatchDate(m.match_date);
@@ -241,6 +271,7 @@ export default function AdminPage() {
 
   async function handleAddUpcomingMatch(e: React.FormEvent) {
     e.preventDefault();
+    if (!canMatches) { alert('Only approved coaches and management can schedule matches.'); return; }
     setSubmitting(true);
     const { error } = await supabase.from('matches').insert({
       team: activeTeam,
@@ -263,6 +294,7 @@ export default function AdminPage() {
 
   async function handleAddAchievement(e: React.FormEvent) {
     e.preventDefault();
+    if (!canAchievements) { alert('Only a manager or owner can manage achievements.'); return; }
 
     // Determine which placement text to send to the database
     const finalPlacement = achPlacement === 'Others' ? customPlacement.trim() : achPlacement;
@@ -296,6 +328,8 @@ export default function AdminPage() {
   }
 
   async function deleteRecord(table: string, id: number) {
+    if (table === 'matches' && !canDeleteMatches) { alert('Only a manager or owner can delete matches.'); return; }
+    if (table === 'team_achievements' && !canAchievements) { alert('Only a manager or owner can delete achievements.'); return; }
     if (!confirm('Are you sure you want to delete this?')) return;
     if (table === 'matches') {
       const r = await supabase.from('match_player_stats').delete().eq('match_id', id);
@@ -308,6 +342,7 @@ export default function AdminPage() {
 
   async function handleAddPlayer(e: React.FormEvent) {
     e.preventDefault();
+    if (!canRoster) { alert('Only a manager or owner can update the roster.'); return; }
     if (!newIgn.trim()) return;
     setAddingPlayer(true);
     const { error } = await supabase.from('players').insert({
@@ -330,6 +365,7 @@ export default function AdminPage() {
   }
 
   async function removePlayer(id: number, ign: string) {
+    if (!canRoster) return;
     if (!confirm(`Remove ${ign}?`)) return;
     const { error } = await supabase.from('players').delete().eq('id', id);
     if (error) { alert('Remove failed: ' + error.message); return; }
@@ -337,6 +373,7 @@ export default function AdminPage() {
   }
 
   function startEdit(p: any) {
+    if (!canRoster) return;
     setEditingId(p.id);
     setEditForm({
       ign: p.ign || '', role: p.role || 'Midlaner', main_hero: p.main_hero || '', image_url: p.image_url || '',
@@ -346,6 +383,7 @@ export default function AdminPage() {
   }
 
   async function saveEdit(id: number) {
+    if (!canRoster) return;
     const { error } = await supabase.from('players').update({
       ign: editForm.ign.trim(), role: editForm.role, main_hero: editForm.main_hero.trim() || null,
       image_url: editForm.image_url.trim() || null, full_name: editForm.full_name.trim() || null,
@@ -386,12 +424,12 @@ export default function AdminPage() {
 
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-black uppercase tracking-wide bg-gradient-to-r from-accent via-pink-300 to-white bg-clip-text text-transparent">Admin Panel</h1>
-          <p className="text-gray-500 text-sm mt-1 uppercase tracking-[0.3em]">{activeTeam}</p>
+          <p className="text-gray-500 text-sm mt-1 uppercase tracking-[0.3em]">{activeTeam} · {managementRole === 'none' ? 'Verifying role' : managementRole + ' access'}</p>
         </div>
 
         {/* Tab System */}
         <div className="flex border-b border-gray-800 mb-8 overflow-x-auto">
-          {TABS.map((tab) => (
+          {TABS.filter((tab) => tab !== 'Player Evaluation' || canEvaluate).map((tab) => (
             <button key={tab} onClick={() => { if (tab === 'Player Evaluation') { setFocusEvalMatchId(null); setEvalOpenVersion((n) => n + 1); } if (tab === 'Weekly Report') setReportFocus(null); setActiveTab(tab); }}
               className={`px-6 py-3 font-bold uppercase tracking-widest transition-colors whitespace-nowrap ${
                 activeTab === tab ? 'text-accent border-b-2 border-accent' : 'text-gray-500 hover:text-gray-300'}`}>
@@ -402,7 +440,7 @@ export default function AdminPage() {
 
         {activeTab === 'Coach Dashboard' && (
           <CoachDashboard activeTeam={activeTeam} roster={roster} matches={completedMatches}
-            onEvaluateMatch={openMatchForEvaluation} onOpenMatchLog={() => setActiveTab('Match Log')}
+            managementRole={managementRole} canEdit={canMatches} onEvaluateMatch={openMatchForEvaluation} onOpenMatchLog={() => setActiveTab('Match Log')}
             onOpenReport={openDashboardWeeklyReport} onOpenReports={() => { setReportFocus(null); setActiveTab('Weekly Report'); }} />
         )}
 
@@ -410,8 +448,9 @@ export default function AdminPage() {
           <div className="bg-[#1a1a1a]/80 backdrop-blur p-8 rounded-xl border border-gray-800 shadow-xl">
             <h2 className="text-2xl font-extrabold text-accent uppercase mb-4">Coach / Manager Guide</h2>
             <div className="space-y-4 text-gray-300">
+              <p><strong>Management Permissions:</strong> Owner and Manager control roster, achievements, and deletes; Coach can register matches and evaluate players; Viewer has read-only access. Authorized roles are enforced by Supabase policies.</p>
               <p><strong>1. Managing the Roster:</strong> Go to Roster to add players or coaches. Make sure you are in the correct team view (Ladies or Montrix) before adding them.</p>
-              <p><strong>2. Upcoming Matches Auto-Transfer:</strong> Upcoming matches are transferred to completed Match Log after their date passes. Review the score and match details there, then evaluate players in the separate Player Evaluation tab.</p>
+              <p><strong>2. Match Result Confirmation:</strong> Scheduled matches never become draws automatically. After a match, select Enter result, verify both scores and save to Match Log. Then evaluate participating players.</p>
               <p><strong>3. Player Attendance:</strong> In Player Evaluation, select an already registered match and mark each player (and coach / manager) as Played, Benched, or Absent. If someone is absent, you must write a short remark (e.g., "Sick", "Injury", "Personal"). Absent members do NOT count toward attendance rate.</p>
               <p><strong>Evaluation Progress Tracker:</strong> In Match Log, check which matches still need player assessments. Select Continue evaluation to rate missing players. Benched and Absent statuses count as recorded; Played needs all six KPI scores.</p>
               <p><strong>4. Player Evaluation System:</strong> Choose a registered match and a player, then use the large 1–5 rating scales for all six coach-assessed KPIs: Mechanics, Macro, Communication, Role Execution, Discipline and Hero Pool. Ratings are weighted using the Excel workbook and combined with attendance for Overall Evaluation.</p>
@@ -428,7 +467,7 @@ export default function AdminPage() {
 
         {activeTab === 'Roster' && (
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 animate-fadeIn">
-            <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 xl:col-span-1 h-fit shadow-xl">
+            {canRoster && <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 xl:col-span-1 h-fit shadow-xl">
               <h3 className="font-bold text-accent uppercase tracking-wider mb-4">Add New Member</h3>
               <form onSubmit={handleAddPlayer} className="flex flex-col gap-3">
                 <input type="text" placeholder="IGN *" value={newIgn} onChange={(e) => setNewIgn(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none" required />
@@ -453,9 +492,9 @@ export default function AdminPage() {
                   {addingPlayer ? 'Adding...' : '+ Add Member'}
                 </button>
               </form>
-            </div>
+            </div>}
 
-            <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 xl:col-span-2 shadow-xl">
+            <div className={`bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 shadow-xl ${canRoster ? 'xl:col-span-2' : 'xl:col-span-3'}`}>
               <h3 className="font-bold text-accent uppercase tracking-wider mb-4">Current Roster ({roster.length})</h3>
               {roster.length === 0 ? (
                 <p className="text-gray-500 italic text-sm">No members in roster.</p>
@@ -463,7 +502,7 @@ export default function AdminPage() {
                 <div className="flex flex-col gap-3 max-h-[600px] overflow-y-auto pr-2">
                   {roster.map((p) => (
                     <div key={p.id} className="bg-[#121212] border border-gray-800 rounded-lg p-4">
-                      {editingId === p.id ? (
+                      {canRoster && editingId === p.id ? (
                         <div className="flex flex-col gap-3">
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                             <input type="text" value={editForm.ign} onChange={(e) => setEditForm({ ...editForm, ign: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="IGN" />
@@ -501,10 +540,10 @@ export default function AdminPage() {
                               {p.mlbb_id && <p className="text-[10px] text-gray-500">MLBB {p.mlbb_id}{p.mlbb_server ? ` (${p.mlbb_server})` : ''}</p>}
                             </div>
                           </div>
-                          <div className="flex gap-2">
+                          {canRoster && <div className="flex gap-2">
                             <button onClick={() => startEdit(p)} className="bg-blue-900/50 hover:bg-blue-800 text-blue-300 text-xs px-3 py-1.5 rounded font-bold transition-colors">Edit</button>
                             <button onClick={() => removePlayer(p.id, p.ign)} className="bg-red-900/50 hover:bg-red-800 text-red-300 text-xs px-3 py-1.5 rounded font-bold transition-colors">Remove</button>
-                          </div>
+                          </div>}
                         </div>
                       )}
                     </div>
@@ -517,7 +556,7 @@ export default function AdminPage() {
 
         {activeTab === 'Upcoming' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn">
-            <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 h-fit shadow-xl">
+            {canMatches && <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 h-fit shadow-xl">
               <h3 className="font-bold text-accent uppercase mb-4">Schedule Upcoming Match</h3>
               <form onSubmit={handleAddUpcomingMatch} className="flex flex-col gap-3">
                 <div className="flex gap-3">
@@ -533,7 +572,7 @@ export default function AdminPage() {
                 <input type="text" placeholder="Opponent Logo URL" value={upLogo} onChange={(e) => setUpLogo(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" />
                 <button type="submit" disabled={submitting} className="bg-blue-700 hover:bg-blue-600 font-bold uppercase py-2 rounded mt-2 text-white">Add to Schedule</button>
               </form>
-            </div>
+            </div>}
 
             <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 shadow-xl">
               <h3 className="font-bold text-accent uppercase mb-4">Scheduled Matches</h3>
@@ -545,7 +584,22 @@ export default function AdminPage() {
                       <p className="text-accent text-xs font-bold">{m.match_date}{m.match_time ? ` · ${formatTime(m.match_time)}` : ''}</p>
                       <p className="font-bold">DAG vs {m.opponent_name} <span className="text-gray-500 text-xs ml-2 font-normal bg-gray-900 px-2 py-0.5 rounded">{m.match_type}</span></p>
                     </div>
-                    <button onClick={() => deleteRecord('matches', m.id)} className="bg-red-900 text-red-300 text-xs px-3 py-1.5 rounded">Delete</button>
+                    <div className="flex flex-col items-end gap-2">
+                      <span className={`rounded border px-2 py-1 text-[10px] font-bold ${m.status === 'cancelled' ? 'border-gray-700 text-gray-400' : m.status === 'awaiting_result' || m.match_date <= todayMY ? 'border-amber-800 bg-amber-950/25 text-amber-300' : 'border-blue-800 text-blue-300'}`}>
+                        {m.status === 'cancelled' ? 'Cancelled' : m.status === 'awaiting_result' || m.match_date <= todayMY ? 'Awaiting confirmed result' : 'Scheduled'}
+                      </span>
+                      {canMatches && m.status !== 'cancelled' && <button type="button" onClick={() => { void finishScheduledMatch(m); }}
+                        className="rounded bg-accent px-3 py-1.5 text-xs font-bold text-white hover:brightness-110">
+                        Enter result
+                      </button>}
+                      {canMatches && m.status === 'upcoming' && <button type="button" onClick={() => { void changeScheduledStatus(m, 'awaiting_result'); }}
+                        className="rounded border border-amber-800 px-3 py-1.5 text-xs font-bold text-amber-300">Mark awaiting result</button>}
+                      {canMatches && m.status !== 'cancelled' && <button type="button" onClick={() => { void changeScheduledStatus(m, 'cancelled'); }}
+                        className="rounded border border-gray-700 px-3 py-1.5 text-xs text-gray-300">Cancel match</button>}
+                      {canMatches && m.status === 'cancelled' && <button type="button" onClick={() => { void changeScheduledStatus(m, 'upcoming'); }}
+                        className="rounded border border-blue-800 px-3 py-1.5 text-xs text-blue-300">Restore</button>}
+                      {canDeleteMatches && <button onClick={() => deleteRecord('matches', m.id)} className="bg-red-900 text-red-300 text-xs px-3 py-1.5 rounded">Delete</button>}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -555,7 +609,7 @@ export default function AdminPage() {
 
         {activeTab === 'Achievements' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn">
-            <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 h-fit shadow-xl">
+            {canAchievements && <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 h-fit shadow-xl">
               <h3 className="font-bold text-accent uppercase mb-4">Add Team Achievement</h3>
               <form onSubmit={handleAddAchievement} className="flex flex-col gap-3">
                 <input type="date" value={achDate} onChange={(e) => setAchDate(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" required />
@@ -578,7 +632,7 @@ export default function AdminPage() {
                 <input type="text" placeholder="Achievement Image URL (Optional)" value={achImage} onChange={(e) => setAchImage(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" />
                 <button type="submit" disabled={submitting} className="bg-yellow-700 hover:bg-yellow-600 font-bold uppercase py-2 rounded mt-2 text-white">Save Achievement</button>
               </form>
-            </div>
+            </div>}
 
             <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 shadow-xl">
               <h3 className="font-bold text-accent uppercase mb-4">Past Achievements</h3>
@@ -595,7 +649,7 @@ export default function AdminPage() {
                         <p className="text-xs text-gray-500">{a.date}</p>
                       </div>
                     </div>
-                    <button onClick={() => deleteRecord('team_achievements', a.id)} className="bg-red-900 text-red-300 text-xs px-3 py-1.5 rounded">Delete</button>
+                    {canAchievements && <button onClick={() => deleteRecord('team_achievements', a.id)} className="bg-red-900 text-red-300 text-xs px-3 py-1.5 rounded">Delete</button>}
                   </div>
                 ))}
               </div>
@@ -616,7 +670,7 @@ export default function AdminPage() {
                   <h3 className="font-black uppercase text-accent">{editingMatchId ? 'Edit Match Record' : 'Log Completed Match'}</h3>
                   {editingMatchId && <button type="button" onClick={resetMatchForm} className="rounded bg-gray-700 px-3 py-2 text-xs hover:bg-gray-600">Cancel Edit</button>}
                 </div>
-                <form onSubmit={handleSaveMatch} className="flex flex-col gap-5">
+                {canMatches ? <form onSubmit={handleSaveMatch} className="flex flex-col gap-5">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <label className="text-xs font-bold text-gray-400">Match date<input type="date" value={matchDate} onChange={(e) => setMatchDate(e.target.value)} className="mt-2 w-full rounded-lg border border-gray-700 bg-[#121212] px-3 py-3 text-white outline-none focus:border-accent" required /></label>
                     <label className="text-xs font-bold text-gray-400">Type<select value={matchType} onChange={(e) => setMatchType(e.target.value)} className="mt-2 w-full rounded-lg border border-gray-700 bg-[#121212] px-3 py-3 text-white outline-none focus:border-accent">
@@ -640,10 +694,11 @@ export default function AdminPage() {
                   <button type="submit" disabled={submitting} className="rounded-xl bg-accent px-6 py-4 font-black uppercase text-white hover:brightness-110 disabled:opacity-50">
                     {submitting ? 'Saving...' : editingMatchId ? 'Update Match Log' : 'Register Completed Match'}
                   </button>
-                </form>
+                </form> : <p className="text-sm text-gray-400">Read-only match history. Contact a Coach or Manager to update results.</p>}
               </div>
               <MatchEvaluationTracker activeTeam={activeTeam} roster={roster} matches={completedMatches}
                 onEvaluate={openMatchForEvaluation} onEdit={startEditMatch}
+                canEdit={canMatches} canDelete={canDeleteMatches}
                 onDelete={(id) => { void deleteRecord('matches', id); }} />
             </div>
           </div>

@@ -66,8 +66,8 @@ export default function PlannerPage() {
     async function checkManagement() {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) { if (active) setCanManage(false); return; }
-      const { data, error } = await supabase.rpc('is_approved_admin');
-      if (active) setCanManage(!error && data === true);
+      const { data, error } = await supabase.rpc('my_management_role');
+      if (active) setCanManage(!error && (data === 'owner' || data === 'manager'));
     }
     void checkManagement();
     return () => { active = false; };

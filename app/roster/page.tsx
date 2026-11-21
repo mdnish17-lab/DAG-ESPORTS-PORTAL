@@ -17,21 +17,6 @@ const NAV = [
 ];
 const CURRENT = '/roster';
 
-const calcAge = (dob: string) => {
-  if (!dob) return null;
-  const d = new Date(dob);
-  const t = new Date();
-  let a = t.getFullYear() - d.getFullYear();
-  const m = t.getMonth() - d.getMonth();
-  if (m < 0 || (m === 0 && t.getDate() < d.getDate())) a--;
-  return a;
-};
-
-const formatDob = (dob: string) => {
-  if (!dob) return '—';
-  return new Date(dob).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-};
-
 const isStaff = (role: string) => {
   const r = (role || '').toLowerCase();
   return r === 'coach' || r === 'manager';
@@ -56,7 +41,7 @@ export default function RosterPage() {
     let cancelled = false;
     async function fetchRoster() {
       setLoading(true);
-      const { data, error } = await supabase.from('players').select('*').eq('team', activeTeam).order('id');
+      const { data, error } = await supabase.from('public_player_profiles').select('id,team,ign,role,main_hero,image_url,achievements,full_name,stay,age').eq('team', activeTeam).order('id');
       if (error) console.error('Roster error:', error);
       if (cancelled) return;
       setRoster(data || []);
@@ -105,12 +90,9 @@ export default function RosterPage() {
 
         {expanded && (
           <div className="mt-4 pt-4 border-t border-gray-800 flex flex-col gap-2 text-sm animate-fadeIn">
-            <div className="flex justify-between"><span className="text-gray-400 font-semibold">Full Name</span><span className="text-white">{player.full_name || '—'}</span></div>
-            <div className="flex justify-between"><span className="text-gray-400 font-semibold">Date of Birth</span><span className="text-white">{formatDob(player.date_of_birth)}</span></div>
-            <div className="flex justify-between"><span className="text-gray-400 font-semibold">Age</span><span className="text-white">{(calcAge(player.date_of_birth) ?? player.age) ? (calcAge(player.date_of_birth) ?? player.age) + ' years old' : '—'}</span></div>
-            <div className="flex justify-between"><span className="text-gray-400 font-semibold">MLBB ID</span><span className="text-white font-mono">{player.mlbb_id || '—'}</span></div>
-            <div className="flex justify-between"><span className="text-gray-400 font-semibold">Server</span><span className="text-white font-mono">{player.mlbb_server || '—'}</span></div>
-            <div className="flex justify-between"><span className="text-gray-400 font-semibold">Stay</span><span className="text-white text-right">{player.stay || '—'}</span></div>
+            <div className="flex justify-between gap-4"><span className="font-semibold text-gray-400">Full Name</span><span className="text-right text-white">{player.full_name || '—'}</span></div>
+            <div className="flex justify-between gap-4"><span className="font-semibold text-gray-400">Age</span><span className="text-right text-white">{player.age != null ? `${player.age} years old` : '—'}</span></div>
+            <div className="flex justify-between gap-4"><span className="font-semibold text-gray-400">Location</span><span className="text-right text-white">{player.stay || '—'}</span></div>
             <div className="mt-2">
               <span className="text-gray-400 font-semibold text-xs uppercase tracking-wider">Achievements</span>
               {player.achievements ? (
@@ -172,7 +154,7 @@ export default function RosterPage() {
           <>
             <div className="w-full mt-4">
               <h2 className="text-2xl font-bold mb-1 tracking-widest text-gray-200 uppercase">Active Players ({players.length})</h2>
-              <p className="text-xs text-gray-500 mb-5 border-b border-gray-800 pb-3">Click a card to show or hide player details.</p>
+              <p className="text-xs text-gray-500 mb-5 border-b border-gray-800 pb-3">Click a card to view full name, age, general location and player achievements. Sensitive account information remains private.</p>
               {players.length === 0 ? (
                 <p className="text-gray-500 italic py-10 text-center">No players for {activeTeam} yet.</p>
               ) : (

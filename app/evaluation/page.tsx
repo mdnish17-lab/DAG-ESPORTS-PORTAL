@@ -72,7 +72,7 @@ export default function EvaluationPage() {
 
     async function fetchAll() {
       setLoading(true);
-      const { data: rosterData, error: rErr } = await supabase.from('players').select('*').eq('team', activeTeam).order('id');
+      const { data: rosterData, error: rErr } = await supabase.from('public_player_profiles').select('*').eq('team', activeTeam).order('id');
       if (rErr) console.error('Roster error:', rErr);
 
       const { data: matchRows, error: mErr } = await supabase
@@ -85,8 +85,8 @@ export default function EvaluationPage() {
       const att: Record<string, { attended: number; absent: number; rate: number; lastReason: string }> = {};
       if (staffMembers.length > 0 && ids.length > 0) {
         const { data: rows, error: aErr } = await supabase
-          .from('match_player_stats')
-          .select('ign, status, absent_reason, match_id')
+          .from('public_match_player_stats')
+          .select('ign, status, match_id')
           .in('match_id', ids)
           .in('ign', staffMembers.map((s: any) => s.ign))
           .order('id', { ascending: false });
@@ -99,7 +99,7 @@ export default function EvaluationPage() {
             attended,
             absent: absentRows.length,
             rate: Math.round((attended / ids.length) * 100),
-            lastReason: absentRows[0]?.absent_reason || '',
+            lastReason: '',
           };
         });
       }
@@ -158,7 +158,7 @@ export default function EvaluationPage() {
     let allStats: any[] = [];
     if (matchIds.length > 0) {
       const { data, error } = await supabase
-        .from('match_player_stats')
+        .from('public_match_player_stats')
         .select('*')
         .eq('ign', player.ign)
         .in('match_id', matchIds)
@@ -438,8 +438,8 @@ export default function EvaluationPage() {
 
                             {isAbsent ? (
                               <div className="bg-red-900/20 border border-red-900/50 p-4 rounded">
-                                <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest mb-1">Absence Reason</p>
-                                <p className="text-red-200 text-sm italic">"{log.absent_reason || 'No reason recorded.'}"</p>
+                                <p className="text-[10px] text-red-400 font-bold uppercase tracking-widest mb-1">Attendance</p>
+                                <p className="text-red-200 text-sm italic">Absent (reason available to authorized management only)</p>
                               </div>
                             ) : isBench ? (
                               <p className="text-yellow-500 font-bold text-sm bg-yellow-900/20 p-2 rounded inline-block border border-yellow-900/50">Benched (did not play)</p>
@@ -471,11 +471,7 @@ export default function EvaluationPage() {
                               </div>
                             )}
 
-                            {!isAbsent && (
-                              <div className="mt-4 bg-black/40 p-4 rounded border-l-4 border-accent text-sm text-gray-200 italic shadow-inner">
-                                "{log.coach_comment || 'No specific feedback left for this match.'}"
-                              </div>
-                            )}
+                            
                           </div>
                         );
                       })}
