@@ -7,6 +7,7 @@ import { getTeamTheme, themeStyle } from '../../lib/teamTheme';
 import { supabase } from '../../lib/supabase';
 import { useEffect, useRef, useState } from 'react';
 import WeeklyPerformanceChart from './WeeklyPerformanceChart';
+import { type ImprovementTarget } from '../../lib/improvementTargets';
 import { WEEKLY_METRICS, hasSixRatings, weightedScore, weeklyReviewsFromMatches, formatWeek, type WeeklyReview } from '../../lib/weeklyKpi';
 
 const TEAMS = ['DAG Ladies', 'DAG Montrix'];
@@ -64,6 +65,7 @@ export default function EvaluationPage() {
   const selectionRequest = useRef(0);
   const [weeklyReviews, setWeeklyReviews] = useState<WeeklyReview[]>([]);
   const [coachWeeklyReports, setCoachWeeklyReports] = useState<Array<{ id: number; week_start: string; coach_comment: string; improvements: string }>>([]);
+  const [improvementTargets, setImprovementTargets] = useState<ImprovementTarget[]>([]);
   const [staffAttendance, setStaffAttendance] = useState<Record<string, { attended: number; absent: number; rate: number; lastReason: string }>>({});
 
   useEffect(() => {
@@ -118,6 +120,7 @@ export default function EvaluationPage() {
     setPlayerMatches([]);
     setWeeklyReviews([]);
     setCoachWeeklyReports([]);
+    setImprovementTargets([]);
     setSummary(null);
     fetchAll();
     return () => { cancelled = true; };
@@ -136,11 +139,12 @@ export default function EvaluationPage() {
 
   const handlePlayerClick = async (player: any) => {
     const request = ++selectionRequest.current;
-    if (selectedPlayer?.id === player.id) { setSelectedPlayer(null); setPlayerMatches([]); setWeeklyReviews([]); setCoachWeeklyReports([]); setSummary(null); setLoadingStats(false); return; }
+    if (selectedPlayer?.id === player.id) { setSelectedPlayer(null); setPlayerMatches([]); setWeeklyReviews([]); setCoachWeeklyReports([]); setImprovementTargets([]); setSummary(null); setLoadingStats(false); return; }
     setSelectedPlayer(player);
     setSummary(null);
     setWeeklyReviews([]);
     setCoachWeeklyReports([]);
+    setImprovementTargets([]);
     setLoadingStats(true);
 
     // Weekly narrative reports are separate from the automatic numeric KPI graph.
@@ -153,6 +157,18 @@ export default function EvaluationPage() {
         if (request !== selectionRequest.current) return;
         if (error && !['PGRST205', '42P01'].includes(error.code || '')) console.warn('Coach reports unavailable:', error.message);
         setCoachWeeklyReports(data || []);
+      });
+
+    // Goals are deliberately published alongside weekly comments and the KPI chart.
+    // The public view exposes only approved target scores and non-sensitive focus notes.
+    void supabase.from('weekly_player_targets')
+      .select('id,player_id,team,week_start,metric_key,target_score,focus_note')
+      .eq('player_id', player.id).eq('team', activeTeam)
+      .order('week_start', { ascending: false }).limit(100)
+      .then(({ data, error }) => {
+        if (request !== selectionRequest.current) return;
+        if (error) console.warn('Improvement targets unavailable:', error.message);
+        setImprovementTargets((data || []) as ImprovementTarget[]);
       });
 
     let allStats: any[] = [];
@@ -377,6 +393,7 @@ export default function EvaluationPage() {
                   <WeeklyPerformanceChart
                     playerName={selectedPlayer.ign}
                     reviews={weeklyReviews}
+                    targets={improvementTargets}
                     loading={loadingStats}
                     error={''}
                   />
@@ -396,6 +413,24 @@ export default function EvaluationPage() {
                         {coachWeeklyReports.map((report) => (
                           <article key={report.id} className="rounded-xl border border-gray-700 bg-[#1b1b1b] p-5 md:p-6">
                             <h5 className="mb-4 text-sm font-black uppercase tracking-wider text-accent">Week of {formatWeek(report.week_start)}</h5>
+                            {(() => {
+                              const targetMonday = new Date(report.week_start + 'T12:00:00Z');
+                              targetMonday.setUTCDate(targetMonday.getUTCDate() + 7);
+                              const nextWeek = targetMonday.toISOString().slice(0, 10);
+                              const linked = improvementTargets.filter((target) => target.week_start === nextWeek);
+                              return linked.length ? (
+                                <div className="mb-4 rounded-lg border border-amber-900/50 bg-amber-950/15 p-3">
+                                  <p className="text-xs font-black uppercase text-amber-300">Next-week improvement goals · {formatWeek(nextWeek)}</p>
+                                  <div className="mt-2 flex flex-wrap gap-2">
+                                    {linked.map((target) => (
+                                      <span key={target.id} className="rounded-full border border-amber-900/60 px-3 py-1 text-xs text-gray-200">
+                                        {WEEKLY_METRICS.find((m) => m.key === target.metric_key)?.label || target.metric_key}: {Number(target.target_score).toFixed(1)}/5
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              ) : null;
+                            })()}
                             <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                               <div className="rounded-lg border border-gray-800 bg-[#101010] p-4">
                                 <p className="mb-2 text-xs font-black uppercase tracking-wider text-green-400">Coach Comments</p>
