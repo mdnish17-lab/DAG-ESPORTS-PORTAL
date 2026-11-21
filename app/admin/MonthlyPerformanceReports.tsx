@@ -96,7 +96,7 @@ export default function MonthlyPerformanceReports({ activeTeam, managementRole }
       // For targets beginning on the month's last Monday, include assessed
       // matches through Sunday even if that Sunday is in the next month.
       // Monthly completed-match totals still use only selected-month matches.
-      const boundaryWeeks = [...new Set(targets.map((t) => t.week_start))];
+      const boundaryWeeks = [...new Set(targets.map((t) => t.week_start))].sort();
       let extraMatches: MonthlyMatch[] = [];
       if (boundaryWeeks.length) {
         const nextMonday = new Date(boundaryWeeks[boundaryWeeks.length - 1] + 'T12:00:00Z');
