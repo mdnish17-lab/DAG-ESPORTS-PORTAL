@@ -89,7 +89,7 @@ export default function DagEsportsHome() {
 
         <nav aria-label="DAG Esports home navigation" className="mt-4 flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#130e14]/95 p-3 shadow-xl">
           <a href="#about-owner" className="rounded-xl border border-gray-700 px-4 py-2.5 text-xs font-bold uppercase text-gray-200 hover:border-pink-400">Meet the Owner</a>
-          <a href="#dag-teams" className="rounded-xl border border-gray-700 px-4 py-2.5 text-xs font-bold uppercase text-gray-200 hover:border-pink-400">Choose a Team</a>
+          <a href="#dag-teams" className="rounded-xl border border-gray-700 px-4 py-2.5 text-xs font-bold uppercase text-gray-200 hover:border-pink-400">Team List</a>
           <a href="#dag-hall-of-fame" className="rounded-xl border border-gray-700 px-4 py-2.5 text-xs font-bold uppercase text-gray-200 hover:border-pink-400">Hall of Fame</a>
           <Link href="/management" className="rounded-xl border border-pink-500/50 bg-pink-500/10 px-4 py-2.5 text-xs font-black uppercase text-pink-200 hover:bg-pink-500/20">Management</Link>
         </nav>
@@ -115,7 +115,7 @@ export default function DagEsportsHome() {
         <section id="dag-teams" className="mt-14 scroll-mt-6">
           <div className="text-center">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-pink-400">Explore our divisions</p>
-            <h2 className="mt-2 text-3xl font-black uppercase sm:text-4xl">Choose Your Team</h2>
+            <h2 className="mt-2 text-3xl font-black uppercase sm:text-4xl">Team List</h2>
             <p className="mt-3 text-sm text-gray-400">Explore each team's performance, roster, achievements, evaluations and strategy planner.</p>
           </div>
           <div className="mt-7 grid gap-5 sm:grid-cols-2">
