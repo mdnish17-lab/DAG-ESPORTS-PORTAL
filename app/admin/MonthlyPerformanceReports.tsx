@@ -6,6 +6,7 @@ import { buildMonthlyReport, monthWindow, previousMonthMalaysia,
   type MonthlyAssessment, type MonthlyMatch, type MonthlyPlayer, type MonthlyWeeklyReport } from '../../lib/monthlyPerformance';
 import { monthlyReportPdf } from '../../lib/monthlyReportPdf';
 import { monthlyReportExcel } from '../../lib/monthlyReportExcel';
+import type { ImprovementTarget } from '../../lib/improvementTargets';
 
 type Props = { activeTeam: string; managementRole: string };
 const editableRoles = ['owner', 'manager', 'coach'];
@@ -80,15 +81,36 @@ export default function MonthlyPerformanceReports({ activeTeam, managementRole }
       // Confirm current management role server-side for every export.
       const { data: role, error: roleError } = await supabase.rpc('my_management_role');
       if (roleError || !editableRoles.includes(String(role))) throw new Error('Management permission could not be confirmed.');
-      const [roster, matches] = await Promise.all([
+      const [roster, matches, targets] = await Promise.all([
         fetchAll<MonthlyPlayer>('public_player_profiles',
           'id,team,ign,role,full_name', (q) => q.eq('team', requestTeam)),
         fetchAll<MonthlyMatch>('matches',
           'id,team,status,match_date,opponent_name,match_type,dag_score,opponent_score,result',
           (q) => q.eq('team', requestTeam).eq('status', 'completed')
             .gte('match_date', window.start).lt('match_date', window.endExclusive)),
+        fetchAll<ImprovementTarget>('weekly_player_targets',
+          'id,player_id,team,week_start,metric_key,target_score,focus_note',
+          (q) => q.eq('team', requestTeam).gte('week_start', window.start)
+            .lt('week_start', window.endExclusive)),
       ]);
-      const matchIds = matches.map((match) => match.id);
+      // For targets beginning on the month's last Monday, include assessed
+      // matches through Sunday even if that Sunday is in the next month.
+      // Monthly completed-match totals still use only selected-month matches.
+      const boundaryWeeks = [...new Set(targets.map((t) => t.week_start))];
+      let extraMatches: MonthlyMatch[] = [];
+      if (boundaryWeeks.length) {
+        const nextMonday = new Date(boundaryWeeks[boundaryWeeks.length - 1] + 'T12:00:00Z');
+        nextMonday.setUTCDate(nextMonday.getUTCDate() + 7);
+        const endOfTargetWeeks = nextMonday.toISOString().slice(0, 10);
+        if (endOfTargetWeeks > window.endExclusive) {
+          extraMatches = await fetchAll<MonthlyMatch>('matches',
+            'id,team,status,match_date,opponent_name,match_type,dag_score,opponent_score,result',
+            (q) => q.eq('team', requestTeam).eq('status', 'completed')
+              .gte('match_date', window.endExclusive).lt('match_date', endOfTargetWeeks));
+        }
+      }
+      const matchingMatches = [...matches, ...extraMatches];
+      const matchIds = matchingMatches.map((match) => match.id);
       const assessments: MonthlyAssessment[] = [];
       for (let i = 0; i < matchIds.length; i += 40) {
         const ids = matchIds.slice(i, i + 40);
@@ -104,8 +126,8 @@ export default function MonthlyPerformanceReports({ activeTeam, managementRole }
         (q) => q.eq('team', requestTeam).gte('week_start', window.start)
           .lt('week_start', window.endExclusive));
       const completed = buildMonthlyReport({
-        team: requestTeam, month: requestMonth, roster, matches,
-        assessments, weeklyReports: reports,
+        team: requestTeam, month: requestMonth, roster, matches: matchingMatches,
+        assessments, weeklyReports: reports, targets,
       });
       setReport(completed);
       setGeneratedFor(requestTeam + ':' + requestMonth);
@@ -140,7 +162,7 @@ export default function MonthlyPerformanceReports({ activeTeam, managementRole }
       <div className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h3 id="monthly-performance-title" className="text-lg font-black uppercase text-accent">Monthly Performance Reports</h3>
-          <p className="mt-1 text-xs text-gray-400">Export PDF or Excel for {activeTeam} · matches, KPI ratings, attendance and weekly coaching notes.</p>
+          <p className="mt-1 text-xs text-gray-400">Export PDF or Excel for {activeTeam} · matches, KPI ratings, attendance, weekly coaching notes and improvement goal outcomes.</p>
         </div>
         <span className="rounded-full border border-accent/40 bg-accent/10 px-3 py-1 text-[10px] font-black uppercase tracking-wider text-accent">Management only</span>
       </div>
@@ -185,6 +207,16 @@ export default function MonthlyPerformanceReports({ activeTeam, managementRole }
               <div className="rounded-lg bg-[#161016] p-3"><p className="text-[10px] uppercase text-gray-500">Draws</p><p className="mt-1 font-black">{summary?.draws}</p></div>
               <div className="rounded-lg bg-[#161016] p-3"><p className="text-[10px] uppercase text-gray-500">Coach KPI</p><p className="mt-1 font-black">{number(summary?.coachAvg ?? null)} / 5</p></div>
               <div className="rounded-lg bg-[#161016] p-3"><p className="text-[10px] uppercase text-gray-500">Avg attendance</p><p className="mt-1 font-black">{summary?.avgAttendancePct == null ? '—' : summary.avgAttendancePct.toFixed(1) + '%'}</p></div>
+            </div>
+            <div className="mt-4 rounded-lg border border-amber-900/40 bg-[#1b1712] p-3">
+              <p className="text-xs font-black uppercase tracking-wider text-amber-300">Weekly Improvement Targets</p>
+              <p className="mt-2 text-sm text-gray-200">
+                {report.totals.goalProgress.total} targets ·
+                {' '}{report.totals.goalProgress.achieved} achieved ·
+                {' '}{report.totals.goalProgress.below} below target ·
+                {' '}{report.totals.goalProgress.notAssessed} not assessed
+              </p>
+              <p className="mt-2 text-xs text-gray-400">Detailed weekly targets, actual KPI values, status and coach focus notes appear in both downloads. Goals are grouped by their Monday week-start date; the full week is assessed even when it crosses a calendar month.</p>
             </div>
             <p className="mt-3 text-xs text-gray-500">Scores are based on completed matches with six valid KPI ratings. Unassessed players remain explicitly unscored. Reports omit DOB, MLBB IDs, locations and private absence reasons.</p>
           </div>}
