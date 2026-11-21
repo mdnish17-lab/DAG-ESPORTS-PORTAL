@@ -457,7 +457,7 @@ export default function AdminPage() {
 
         {activeTab === 'Roster' && (
           <div className="grid grid-cols-1 xl:grid-cols-3 gap-8 animate-fadeIn">
-            <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 xl:col-span-1 h-fit shadow-xl">
+            {canRoster && <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 xl:col-span-1 h-fit shadow-xl">
               <h3 className="font-bold text-accent uppercase tracking-wider mb-4">Add New Member</h3>
               <form onSubmit={handleAddPlayer} className="flex flex-col gap-3">
                 <input type="text" placeholder="IGN *" value={newIgn} onChange={(e) => setNewIgn(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none" required />
@@ -482,9 +482,9 @@ export default function AdminPage() {
                   {addingPlayer ? 'Adding...' : '+ Add Member'}
                 </button>
               </form>
-            </div>
+            </div>}
 
-            <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 xl:col-span-2 shadow-xl">
+            <div className={`bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 shadow-xl ${canRoster ? 'xl:col-span-2' : 'xl:col-span-3'}`}>
               <h3 className="font-bold text-accent uppercase tracking-wider mb-4">Current Roster ({roster.length})</h3>
               {roster.length === 0 ? (
                 <p className="text-gray-500 italic text-sm">No members in roster.</p>
@@ -492,7 +492,7 @@ export default function AdminPage() {
                 <div className="flex flex-col gap-3 max-h-[600px] overflow-y-auto pr-2">
                   {roster.map((p) => (
                     <div key={p.id} className="bg-[#121212] border border-gray-800 rounded-lg p-4">
-                      {editingId === p.id ? (
+                      {canRoster && editingId === p.id ? (
                         <div className="flex flex-col gap-3">
                           <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
                             <input type="text" value={editForm.ign} onChange={(e) => setEditForm({ ...editForm, ign: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="IGN" />
@@ -530,10 +530,10 @@ export default function AdminPage() {
                               {p.mlbb_id && <p className="text-[10px] text-gray-500">MLBB {p.mlbb_id}{p.mlbb_server ? ` (${p.mlbb_server})` : ''}</p>}
                             </div>
                           </div>
-                          <div className="flex gap-2">
+                          {canRoster && <div className="flex gap-2">
                             <button onClick={() => startEdit(p)} className="bg-blue-900/50 hover:bg-blue-800 text-blue-300 text-xs px-3 py-1.5 rounded font-bold transition-colors">Edit</button>
                             <button onClick={() => removePlayer(p.id, p.ign)} className="bg-red-900/50 hover:bg-red-800 text-red-300 text-xs px-3 py-1.5 rounded font-bold transition-colors">Remove</button>
-                          </div>
+                          </div>}
                         </div>
                       )}
                     </div>
@@ -546,7 +546,7 @@ export default function AdminPage() {
 
         {activeTab === 'Upcoming' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn">
-            <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 h-fit shadow-xl">
+            {canMatches && <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 h-fit shadow-xl">
               <h3 className="font-bold text-accent uppercase mb-4">Schedule Upcoming Match</h3>
               <form onSubmit={handleAddUpcomingMatch} className="flex flex-col gap-3">
                 <div className="flex gap-3">
@@ -562,7 +562,7 @@ export default function AdminPage() {
                 <input type="text" placeholder="Opponent Logo URL" value={upLogo} onChange={(e) => setUpLogo(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" />
                 <button type="submit" disabled={submitting} className="bg-blue-700 hover:bg-blue-600 font-bold uppercase py-2 rounded mt-2 text-white">Add to Schedule</button>
               </form>
-            </div>
+            </div>}
 
             <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 shadow-xl">
               <h3 className="font-bold text-accent uppercase mb-4">Scheduled Matches</h3>
@@ -580,11 +580,11 @@ export default function AdminPage() {
                           Awaiting confirmed result
                         </span>
                       )}
-                      <button type="button" onClick={() => { void finishScheduledMatch(m); }}
+                      {canMatches && <button type="button" onClick={() => { void finishScheduledMatch(m); }}
                         className="rounded bg-accent px-3 py-1.5 text-xs font-bold text-white hover:brightness-110">
                         Enter result
-                      </button>
-                      <button onClick={() => deleteRecord('matches', m.id)} className="bg-red-900 text-red-300 text-xs px-3 py-1.5 rounded">Delete</button>
+                      </button>}
+                      {canDeleteMatches && <button onClick={() => deleteRecord('matches', m.id)} className="bg-red-900 text-red-300 text-xs px-3 py-1.5 rounded">Delete</button>}
                     </div>
                   </div>
                 ))}
@@ -595,7 +595,7 @@ export default function AdminPage() {
 
         {activeTab === 'Achievements' && (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn">
-            <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 h-fit shadow-xl">
+            {canAchievements && <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 h-fit shadow-xl">
               <h3 className="font-bold text-accent uppercase mb-4">Add Team Achievement</h3>
               <form onSubmit={handleAddAchievement} className="flex flex-col gap-3">
                 <input type="date" value={achDate} onChange={(e) => setAchDate(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" required />
@@ -618,7 +618,7 @@ export default function AdminPage() {
                 <input type="text" placeholder="Achievement Image URL (Optional)" value={achImage} onChange={(e) => setAchImage(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 outline-none" />
                 <button type="submit" disabled={submitting} className="bg-yellow-700 hover:bg-yellow-600 font-bold uppercase py-2 rounded mt-2 text-white">Save Achievement</button>
               </form>
-            </div>
+            </div>}
 
             <div className="bg-[#1a1a1a]/80 backdrop-blur p-6 rounded-xl border border-gray-800 shadow-xl">
               <h3 className="font-bold text-accent uppercase mb-4">Past Achievements</h3>
@@ -635,7 +635,7 @@ export default function AdminPage() {
                         <p className="text-xs text-gray-500">{a.date}</p>
                       </div>
                     </div>
-                    <button onClick={() => deleteRecord('team_achievements', a.id)} className="bg-red-900 text-red-300 text-xs px-3 py-1.5 rounded">Delete</button>
+                    {canAchievements && <button onClick={() => deleteRecord('team_achievements', a.id)} className="bg-red-900 text-red-300 text-xs px-3 py-1.5 rounded">Delete</button>}
                   </div>
                 ))}
               </div>
@@ -656,7 +656,7 @@ export default function AdminPage() {
                   <h3 className="font-black uppercase text-accent">{editingMatchId ? 'Edit Match Record' : 'Log Completed Match'}</h3>
                   {editingMatchId && <button type="button" onClick={resetMatchForm} className="rounded bg-gray-700 px-3 py-2 text-xs hover:bg-gray-600">Cancel Edit</button>}
                 </div>
-                <form onSubmit={handleSaveMatch} className="flex flex-col gap-5">
+                {canMatches ? <form onSubmit={handleSaveMatch} className="flex flex-col gap-5">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <label className="text-xs font-bold text-gray-400">Match date<input type="date" value={matchDate} onChange={(e) => setMatchDate(e.target.value)} className="mt-2 w-full rounded-lg border border-gray-700 bg-[#121212] px-3 py-3 text-white outline-none focus:border-accent" required /></label>
                     <label className="text-xs font-bold text-gray-400">Type<select value={matchType} onChange={(e) => setMatchType(e.target.value)} className="mt-2 w-full rounded-lg border border-gray-700 bg-[#121212] px-3 py-3 text-white outline-none focus:border-accent">
@@ -680,10 +680,11 @@ export default function AdminPage() {
                   <button type="submit" disabled={submitting} className="rounded-xl bg-accent px-6 py-4 font-black uppercase text-white hover:brightness-110 disabled:opacity-50">
                     {submitting ? 'Saving...' : editingMatchId ? 'Update Match Log' : 'Register Completed Match'}
                   </button>
-                </form>
+                </form> : <p className="text-sm text-gray-400">Read-only match history. Contact a Coach or Manager to update results.</p>}
               </div>
               <MatchEvaluationTracker activeTeam={activeTeam} roster={roster} matches={completedMatches}
                 onEvaluate={openMatchForEvaluation} onEdit={startEditMatch}
+                canEdit={canMatches} canDelete={canDeleteMatches}
                 onDelete={(id) => { void deleteRecord('matches', id); }} />
             </div>
           </div>
