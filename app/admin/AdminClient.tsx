@@ -52,6 +52,21 @@ export default function AdminPage() {
   }, []);
   const setActiveTeam = (team: string) => { setActiveTeamState(team); localStorage.setItem('dag-active-team', team); };
   const [activeTab, setActiveTab] = useState<(typeof TABS)[number]>('Coach Dashboard');
+  const [managementRole, setManagementRole] = useState('none');
+  const canRoster = managementRole === 'owner' || managementRole === 'manager';
+  const canMatches = canRoster || managementRole === 'coach';
+  const canDeleteMatches = canRoster;
+  const canEvaluate = canMatches;
+  const canReports = canMatches;
+  const canAchievements = canRoster;
+  useEffect(() => {
+    let cancelled = false;
+    void supabase.rpc('my_management_role').then(({ data, error }) => {
+      if (!cancelled) setManagementRole(error ? 'none' : String(data || 'none'));
+    });
+    return () => { cancelled = true; };
+  }, []);
+
 
   const [roster, setRoster] = useState<any[]>([]);
   const [allMatches, setAllMatches] = useState<any[]>([]);
@@ -111,10 +126,11 @@ export default function AdminPage() {
 
   useEffect(() => {
     if (teamReady) loadData();
-  }, [activeTeam, teamReady]);
+  }, [activeTeam, teamReady, managementRole]);
 
   async function loadData() {
-    const { data: players, error: pErr } = await supabase.from('players').select('*').eq('team', activeTeam).order('id');
+    const playerSource = canRoster ? 'players' : 'public_player_profiles';
+    const { data: players, error: pErr } = await supabase.from(playerSource).select('*').eq('team', activeTeam).order('id');
     if (pErr) console.error('Players error:', pErr);
     setRoster(players || []);
 
@@ -152,6 +168,7 @@ export default function AdminPage() {
   // never deleted, reset or overwritten when a coach edits the match log.
   async function handleSaveMatch(e: React.FormEvent) {
     e.preventDefault();
+    if (!canMatches) { alert('Only an authorized coach or manager can edit matches.'); return; }
     if (!matchDate || !opponentName.trim()) { alert('Fill in the date and opponent.'); return; }
     if (dagScore.trim() === '' || oppScore.trim() === '') { alert('Enter both confirmed match scores. No default DRAW result will be used.'); return; }
     const ourScore = Number(dagScore), theirScore = Number(oppScore);
@@ -199,6 +216,7 @@ export default function AdminPage() {
 
   // Called explicitly by management, never by the calendar or an automatic job.
   async function finishScheduledMatch(m: any) {
+    if (!canMatches) { alert('You do not have permission to record match results.'); return; }
     if (!confirm(`Record the actual result for DAG vs ${m.opponent_name}? Enter both scores in Match Log before saving.`)) return;
     setEditingMatchId(m.id);
     setMatchDate(m.match_date);
@@ -214,6 +232,7 @@ export default function AdminPage() {
   }
 
   function startEditMatch(m: any) {
+    if (!canMatches) return;
     setActiveTab('Match Log');
     setEditingMatchId(m.id);
     setMatchDate(m.match_date);
@@ -242,6 +261,7 @@ export default function AdminPage() {
 
   async function handleAddUpcomingMatch(e: React.FormEvent) {
     e.preventDefault();
+    if (!canMatches) { alert('Only approved coaches and management can schedule matches.'); return; }
     setSubmitting(true);
     const { error } = await supabase.from('matches').insert({
       team: activeTeam,
@@ -264,6 +284,7 @@ export default function AdminPage() {
 
   async function handleAddAchievement(e: React.FormEvent) {
     e.preventDefault();
+    if (!canAchievements) { alert('Only a manager or owner can manage achievements.'); return; }
 
     // Determine which placement text to send to the database
     const finalPlacement = achPlacement === 'Others' ? customPlacement.trim() : achPlacement;
@@ -297,6 +318,8 @@ export default function AdminPage() {
   }
 
   async function deleteRecord(table: string, id: number) {
+    if (table === 'matches' && !canDeleteMatches) { alert('Only a manager or owner can delete matches.'); return; }
+    if (table === 'team_achievements' && !canAchievements) { alert('Only a manager or owner can delete achievements.'); return; }
     if (!confirm('Are you sure you want to delete this?')) return;
     if (table === 'matches') {
       const r = await supabase.from('match_player_stats').delete().eq('match_id', id);
@@ -309,6 +332,7 @@ export default function AdminPage() {
 
   async function handleAddPlayer(e: React.FormEvent) {
     e.preventDefault();
+    if (!canRoster) { alert('Only a manager or owner can update the roster.'); return; }
     if (!newIgn.trim()) return;
     setAddingPlayer(true);
     const { error } = await supabase.from('players').insert({
@@ -331,6 +355,7 @@ export default function AdminPage() {
   }
 
   async function removePlayer(id: number, ign: string) {
+    if (!canRoster) return;
     if (!confirm(`Remove ${ign}?`)) return;
     const { error } = await supabase.from('players').delete().eq('id', id);
     if (error) { alert('Remove failed: ' + error.message); return; }
@@ -338,6 +363,7 @@ export default function AdminPage() {
   }
 
   function startEdit(p: any) {
+    if (!canRoster) return;
     setEditingId(p.id);
     setEditForm({
       ign: p.ign || '', role: p.role || 'Midlaner', main_hero: p.main_hero || '', image_url: p.image_url || '',
@@ -347,6 +373,7 @@ export default function AdminPage() {
   }
 
   async function saveEdit(id: number) {
+    if (!canRoster) return;
     const { error } = await supabase.from('players').update({
       ign: editForm.ign.trim(), role: editForm.role, main_hero: editForm.main_hero.trim() || null,
       image_url: editForm.image_url.trim() || null, full_name: editForm.full_name.trim() || null,
@@ -387,12 +414,12 @@ export default function AdminPage() {
 
         <div className="mb-8">
           <h1 className="text-3xl md:text-4xl font-black uppercase tracking-wide bg-gradient-to-r from-accent via-pink-300 to-white bg-clip-text text-transparent">Admin Panel</h1>
-          <p className="text-gray-500 text-sm mt-1 uppercase tracking-[0.3em]">{activeTeam}</p>
+          <p className="text-gray-500 text-sm mt-1 uppercase tracking-[0.3em]">{activeTeam} · {managementRole === 'none' ? 'Verifying role' : managementRole + ' access'}</p>
         </div>
 
         {/* Tab System */}
         <div className="flex border-b border-gray-800 mb-8 overflow-x-auto">
-          {TABS.map((tab) => (
+          {TABS.filter((tab) => tab !== 'Player Evaluation' || canEvaluate).map((tab) => (
             <button key={tab} onClick={() => { if (tab === 'Player Evaluation') { setFocusEvalMatchId(null); setEvalOpenVersion((n) => n + 1); } if (tab === 'Weekly Report') setReportFocus(null); setActiveTab(tab); }}
               className={`px-6 py-3 font-bold uppercase tracking-widest transition-colors whitespace-nowrap ${
                 activeTab === tab ? 'text-accent border-b-2 border-accent' : 'text-gray-500 hover:text-gray-300'}`}>
@@ -411,6 +438,7 @@ export default function AdminPage() {
           <div className="bg-[#1a1a1a]/80 backdrop-blur p-8 rounded-xl border border-gray-800 shadow-xl">
             <h2 className="text-2xl font-extrabold text-accent uppercase mb-4">Coach / Manager Guide</h2>
             <div className="space-y-4 text-gray-300">
+              <p><strong>Management Permissions:</strong> Owner and Manager control roster, achievements, and deletes; Coach can register matches and evaluate players; Viewer has read-only access. Authorized roles are enforced by Supabase policies.</p>
               <p><strong>1. Managing the Roster:</strong> Go to Roster to add players or coaches. Make sure you are in the correct team view (Ladies or Montrix) before adding them.</p>
               <p><strong>2. Match Result Confirmation:</strong> Scheduled matches never become draws automatically. After a match, select Enter result, verify both scores and save to Match Log. Then evaluate participating players.</p>
               <p><strong>3. Player Attendance:</strong> In Player Evaluation, select an already registered match and mark each player (and coach / manager) as Played, Benched, or Absent. If someone is absent, you must write a short remark (e.g., "Sick", "Injury", "Personal"). Absent members do NOT count toward attendance rate.</p>
