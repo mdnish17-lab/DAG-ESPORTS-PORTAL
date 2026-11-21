@@ -87,11 +87,11 @@ export default function DagEsportsHome() {
           </div>
         </section>
 
-        <nav aria-label="DAG Esports home navigation" className="mt-4 flex flex-wrap items-center justify-center gap-2 rounded-2xl border border-white/10 bg-[#130e14]/95 p-3 shadow-xl">
-          <a href="#about-owner" className="rounded-xl border border-gray-700 px-4 py-2.5 text-xs font-bold uppercase text-gray-200 hover:border-pink-400">Meet the Owner</a>
-          <a href="#dag-teams" className="rounded-xl border border-gray-700 px-4 py-2.5 text-xs font-bold uppercase text-gray-200 hover:border-pink-400">Team List</a>
-          <a href="#dag-hall-of-fame" className="rounded-xl border border-gray-700 px-4 py-2.5 text-xs font-bold uppercase text-gray-200 hover:border-pink-400">Hall of Fame</a>
-          <Link href="/management" className="rounded-xl border border-pink-500/50 bg-pink-500/10 px-4 py-2.5 text-xs font-black uppercase text-pink-200 hover:bg-pink-500/20">Management</Link>
+        <nav aria-label="DAG Esports home navigation" className="mt-4 grid grid-cols-2 gap-2 rounded-2xl border border-white/10 bg-[#130e14]/95 p-2.5 shadow-xl sm:flex sm:flex-wrap sm:items-center sm:justify-center sm:p-3">
+          <a href="#about-owner" className="flex min-h-11 min-w-0 items-center justify-center rounded-xl border border-gray-700 px-2 py-2.5 text-center text-[11px] font-bold uppercase leading-tight text-gray-200 hover:border-pink-400 sm:px-4 sm:text-xs">Meet the Owner</a>
+          <a href="#dag-teams" className="flex min-h-11 min-w-0 items-center justify-center rounded-xl border border-gray-700 px-2 py-2.5 text-center text-[11px] font-bold uppercase leading-tight text-gray-200 hover:border-pink-400 sm:px-4 sm:text-xs">Team List</a>
+          <a href="#dag-hall-of-fame" className="flex min-h-11 min-w-0 items-center justify-center rounded-xl border border-gray-700 px-2 py-2.5 text-center text-[11px] font-bold uppercase leading-tight text-gray-200 hover:border-pink-400 sm:px-4 sm:text-xs">Hall of Fame</a>
+          <Link href="/management" className="flex min-h-11 min-w-0 items-center justify-center rounded-xl border border-pink-500/50 bg-pink-500/10 px-2 py-2.5 text-center text-[11px] font-black uppercase leading-tight text-pink-200 hover:bg-pink-500/20 sm:px-4 sm:text-xs">Management</Link>
         </nav>
 
         <section id="about-owner" className="mt-12 scroll-mt-6 rounded-3xl border border-gray-800 bg-[#171218]/90 p-5 sm:p-8">
