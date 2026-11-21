@@ -32,11 +32,12 @@ export default function WeeklyReportPanel({ activeTeam, roster, initialPlayerId,
   useEffect(() => {
     let ignore = false;
     async function loadManagementAccess() {
-      const { data, error: authError } = await supabase.rpc('is_approved_admin');
+      const { data, error: authError } = await supabase.rpc('my_management_role');
       if (ignore) return;
-      setIsManager(!authError && data === true);
+      const allowed = !authError && ['owner', 'manager', 'coach'].includes(String(data));
+      setIsManager(allowed);
       if (authError) setAccessError('Management access check unavailable. Verify your Admin Login and Supabase permissions, then refresh.');
-      else if (!data) setAccessError('Only approved DAG management accounts can write weekly reports.');
+      else if (!allowed) setAccessError('Your management role has read-only access to weekly reports.');
       else setAccessError('');
       setCheckingAccess(false);
     }
@@ -107,7 +108,7 @@ export default function WeeklyReportPanel({ activeTeam, roster, initialPlayerId,
       <div className="rounded-2xl border border-accent/40 bg-gradient-to-r from-[#24101c] to-[#151014] p-6 md:p-8">
         <p className="text-xs font-bold uppercase tracking-[0.24em] text-accent">Approved management accounts</p>
         <h2 className="mt-2 text-2xl md:text-3xl font-black uppercase">Weekly Player Report</h2>
-        <p className="mt-2 max-w-3xl text-sm text-gray-300">All approved management accounts can write a weekly review for each player: what they did well, your coaching feedback, and exactly what to improve next week. Reports are displayed on each player&apos;s public Evaluation profile. Numeric performance scores still come automatically from evaluated matches.</p>
+        <p className="mt-2 max-w-3xl text-sm text-gray-300">Approved owners, managers and coaches can write a weekly review for each player: what they did well, your coaching feedback, and exactly what to improve next week. Reports are displayed on each player&apos;s public Evaluation profile. Numeric performance scores still come automatically from evaluated matches.</p>
       </div>
       {checkingAccess ? (
         <div className="rounded-xl border border-gray-800 bg-[#1a1a1a] p-8 text-center text-gray-400">Verifying management access...</div>
