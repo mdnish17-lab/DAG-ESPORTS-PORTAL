@@ -345,7 +345,7 @@ export default function AdminPage() {
     setAddingPlayer(true);
     const { error } = await supabase.from('players').insert({
       team: activeTeam, ign: newIgn.trim(), role: newRole,
-      main_hero: newMainHero.trim() || null, image_url: newImageUrl.trim() || null,
+      main_hero: newMainHero.trim().toUpperCase() || null, image_url: newImageUrl.trim() || null,
       full_name: newFullName.trim() || null, age: newDob ? calcAge(newDob) : null,
       stay: newStay.trim() || null, achievements: newAchievements.trim() || null,
       date_of_birth: newDob || null, mlbb_id: newMlbbId.trim() || null, mlbb_server: newServer.trim() || null,
@@ -374,7 +374,7 @@ export default function AdminPage() {
     if (!canRoster) return;
     setEditingId(p.id);
     setEditForm({
-      ign: p.ign || '', role: p.role || 'Midlaner', main_hero: p.main_hero || '', image_url: p.image_url || '',
+      ign: p.ign || '', role: p.role || 'Midlaner', main_hero: (p.main_hero || '').toUpperCase(), image_url: p.image_url || '',
       full_name: p.full_name || '', age: p.age != null ? String(p.age) : '', stay: p.stay || '', achievements: p.achievements || '',
       date_of_birth: p.date_of_birth || '', mlbb_id: p.mlbb_id || '', mlbb_server: p.mlbb_server || '',
     });
@@ -383,7 +383,7 @@ export default function AdminPage() {
   async function saveEdit(id: number) {
     if (!canRoster) return;
     const { error } = await supabase.from('players').update({
-      ign: editForm.ign.trim(), role: editForm.role, main_hero: editForm.main_hero.trim() || null,
+      ign: editForm.ign.trim(), role: editForm.role, main_hero: editForm.main_hero.trim().toUpperCase() || null,
       image_url: editForm.image_url.trim() || null, full_name: editForm.full_name.trim() || null,
       age: editForm.date_of_birth ? calcAge(editForm.date_of_birth) : editForm.age ? Number(editForm.age) : null, stay: editForm.stay.trim() || null,
       achievements: editForm.achievements.trim() || null,
@@ -481,7 +481,7 @@ export default function AdminPage() {
                   <input type="text" inputMode="numeric" placeholder="Server" value={newServer} onChange={(e) => setNewServer(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none w-1/2" />
                 </div>
                 <input type="text" placeholder="Location / Stay" value={newStay} onChange={(e) => setNewStay(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none" />
-                <input type="text" placeholder="Signature Hero" value={newMainHero} onChange={(e) => setNewMainHero(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none" />
+                <input type="text" placeholder="SIGNATURE HERO" aria-label="Signature Hero" value={newMainHero} onChange={(e) => setNewMainHero(e.target.value.toUpperCase())} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none" />
                 <input type="text" placeholder="Image URL" value={newImageUrl} onChange={(e) => setNewImageUrl(e.target.value)} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none" />
                 <textarea placeholder="Achievements (one per line)" value={newAchievements} onChange={(e) => setNewAchievements(e.target.value)} rows={2} className="bg-[#121212] border border-gray-700 rounded px-3 py-2 text-sm outline-none resize-none" />
                 <button type="submit" disabled={addingPlayer} className="bg-green-700 hover:bg-green-600 font-bold uppercase tracking-wider py-2 rounded text-sm mt-2 transition-colors">
@@ -507,7 +507,7 @@ export default function AdminPage() {
                             </select>
                             <input type="text" value={editForm.full_name} onChange={(e) => setEditForm({ ...editForm, full_name: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="Full Name" />
                             <input type="text" value={editForm.stay} onChange={(e) => setEditForm({ ...editForm, stay: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="Stay" />
-                            <input type="text" value={editForm.main_hero} onChange={(e) => setEditForm({ ...editForm, main_hero: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="Signature Hero" />
+                            <input type="text" value={editForm.main_hero} onChange={(e) => setEditForm({ ...editForm, main_hero: e.target.value.toUpperCase() })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="SIGNATURE HERO" aria-label="Signature Hero" />
                             <input type="text" value={editForm.image_url} onChange={(e) => setEditForm({ ...editForm, image_url: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs col-span-2" placeholder="Image URL" />
                             <input type="text" value={editForm.mlbb_id} onChange={(e) => setEditForm({ ...editForm, mlbb_id: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="MLBB ID" />
                             <input type="text" value={editForm.mlbb_server} onChange={(e) => setEditForm({ ...editForm, mlbb_server: e.target.value })} className="bg-[#1a1a1a] border border-gray-700 rounded px-2 py-2 text-white text-xs" placeholder="Server" />
