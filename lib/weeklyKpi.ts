@@ -39,6 +39,12 @@ export function formatWeek(isoDate: string): string {
   }).format(date);
 }
 
+/** Start of the current Monday-Sunday week in Malaysia (UTC+08:00). */
+export function currentMalaysiaWeekStart(now: Date = new Date()): string {
+  const malaysiaDate = new Date(now.getTime() + 8 * 60 * 60 * 1000).toISOString().slice(0, 10);
+  return weekStartOf(malaysiaDate);
+}
+
 // Weekly graph data is derived from completed, actually assessed match stats.
 // No estimates, default ratings, or ratings for bench/absent rows are added.
 export function hasSixRatings(row: Partial<Record<WeeklyMetricKey, unknown>>): row is WeeklyScores {
