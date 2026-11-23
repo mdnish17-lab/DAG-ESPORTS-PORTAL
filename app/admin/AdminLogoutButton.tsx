@@ -22,7 +22,7 @@ export default function AdminLogoutButton() {
       type="button"
       onClick={logOut}
       disabled={busy}
-      className="rounded-lg border border-pink-300/40 bg-pink-500 px-4 py-2 text-sm font-extrabold text-black transition hover:bg-pink-400 disabled:opacity-60"
+      className="rounded-lg border border-red-300/40 bg-red-500 px-4 py-2 text-sm font-extrabold text-black transition hover:bg-red-400 disabled:opacity-60"
     >
       {busy ? 'SIGNING OUT...' : 'LOG OUT'}
     </button>

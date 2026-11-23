@@ -4,9 +4,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import DagHomeNavigation from '../../lib/DagHomeNavigation';
 import { supabase } from '../../lib/supabase';
+import { DEFAULT_TEAM, TEAMS } from '../../lib/teamTheme';
 import { useEffect, useRef, useState } from 'react';
 
-const TEAMS = ['DAG Ladies', 'DAG Montrix'];
 
 type Tool = 'move' | 'draw' | 'erase';
 type Token = { id: string; team: 'blue' | 'red'; label: string; role: string; x: number; y: number; visible: boolean };
@@ -29,7 +29,7 @@ const makeTokens = (): Token[] => [
 ];
 
 export default function PlannerPage() {
-  const [activeTeam, setActiveTeamState] = useState<string>('DAG Ladies');
+  const [activeTeam, setActiveTeamState] = useState<string>(DEFAULT_TEAM);
   const [teamReady, setTeamReady] = useState(false);
   useEffect(() => {
     const saved = localStorage.getItem('dag-active-team');
@@ -217,7 +217,7 @@ export default function PlannerPage() {
       <div className="relative z-10 w-full max-w-6xl flex flex-col items-center">
         <div className="relative w-full rounded-2xl border border-gray-700 bg-[#14171d] p-5 shadow-lg sm:p-8">
           <div className="flex flex-col items-center gap-4 text-center sm:flex-row sm:text-left">
-            <Image src="/dag-logo.jpg" alt="DAG Esports logo" width={104} height={104}
+            <Image src="/team-logos/dag-esports.webp" alt="DAG Esports logo" width={104} height={104}
               className="h-20 w-20 rounded-full object-contain sm:h-24 sm:w-24" />
             <div className="min-w-0">
               <p className="text-xs font-bold uppercase tracking-[0.35em] text-gray-400">De Ant Gaming</p>
@@ -306,7 +306,7 @@ export default function PlannerPage() {
                     )}
                   </div>
                 ) : (
-                  <p className="rounded-lg border border-pink-400/30 bg-pink-400/10 p-2 text-xs text-gray-200">Public preview: edit the map here, but only approved managers can save plans. <Link href="/admin/login" className="text-pink-300 underline">Management login</Link></p>
+                  <p className="rounded-lg border border-red-400/30 bg-red-400/10 p-2 text-xs text-gray-200">Public preview: edit the map here, but only approved managers can save plans. <Link href="/admin/login" className="text-red-300 underline">Management login</Link></p>
                 )}
                 <button onClick={newPlan} className="text-xs text-gray-400 hover:text-white mt-1">+ Start a blank plan</button>
               </div>

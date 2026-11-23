@@ -21,12 +21,12 @@ function Column({ flip }: { flip?: boolean }) {
             style={{
               writingMode: 'vertical-rl',
               transform: flip ? 'rotate(180deg)' : undefined,
-              color: 'var(--accent-color, #c8196b)',
+              color: 'var(--accent-color, #ef3f33)',
             }}
           >
             {WORD}
           </span>
-          <span className="mt-5 text-[10px]" style={{ color: 'var(--accent-color, #c8196b)' }}>◆</span>
+          <span className="mt-5 text-[10px]" style={{ color: 'var(--accent-color, #ef3f33)' }}>◆</span>
         </div>
       ))}
     </div>
@@ -67,7 +67,7 @@ export default function SiteDecor() {
       </div>
 
       <div className="fixed bottom-20 right-2 z-[60] rounded-full border border-white/15 bg-black/85 px-3 py-1 text-[10px] tracking-wide text-gray-200 shadow-lg backdrop-blur pointer-events-none select-none sm:bottom-3 sm:right-4 sm:text-[11px]">
-        Made by <span className="font-bold" style={{ color: 'var(--accent-color, #c8196b)' }}>NishiKudo</span>
+        Made by <span className="font-bold" style={{ color: 'var(--accent-color, #ef3f33)' }}>NishiKudo</span>
       </div>
     </>
   );
