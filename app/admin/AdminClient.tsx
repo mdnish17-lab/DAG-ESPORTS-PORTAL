@@ -669,7 +669,7 @@ export default function AdminPage() {
                 </select>
               </label>
             </div>
-            {attendanceOnlySelected ? (
+            {isAttendanceOnlyType(matchType) ? (
               <div className="rounded-2xl border border-gray-800 bg-[#1a1a1a]/90 p-6 shadow-xl md:p-8">
                 {canMatches ? (
                   <AttendanceOnlyActivities key={activeTeam + '-' + matchType} activeTeam={activeTeam} roster={roster}
