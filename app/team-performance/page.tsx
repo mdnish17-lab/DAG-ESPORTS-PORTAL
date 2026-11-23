@@ -89,7 +89,7 @@ export default function Home() {
           <div className="absolute -top-24 -left-24 w-64 h-64 rounded-full bg-accent/20 blur-3xl pointer-events-none"></div>
           <div className="relative">
             <p className="text-xs tracking-[0.4em] text-gray-400 uppercase mb-2">De Ant Gaming</p>
-            <h1 className="text-4xl md:text-6xl font-black uppercase leading-tight bg-gradient-to-r from-accent via-pink-300 to-white bg-clip-text text-transparent drop-shadow-lg">{activeTeam}</h1>
+            <h1 className="text-4xl md:text-6xl font-black uppercase leading-tight bg-gradient-to-r from-accent via-accent-dark to-white bg-clip-text text-transparent drop-shadow-lg">{activeTeam}</h1>
             <p className="text-gray-300 font-semibold tracking-widest uppercase text-sm mt-2">Team Performance</p>
 
           </div>
