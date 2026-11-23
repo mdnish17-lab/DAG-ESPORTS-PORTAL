@@ -170,7 +170,7 @@ export default function WeeklyPerformanceChart({ playerName, reviews, loading, e
             ))}
           </svg>
           <p className="mt-1 text-center text-[11px] text-gray-500">Last 12 calendar weeks · New public KPI week starts Monday at midnight (Malaysia) · Unassessed weeks are empty, not zero</p>
-          {metric !== 'overall' && metricTargets.some((goal) => points.some((p) => p.week_start === goal.week_start)) &&
+          {metric !== 'overall' && metricTargets.some((goal) => points.some((p) => p?.week_start === goal.week_start)) &&
             <p className="mt-2 text-center text-xs text-amber-300">Yellow dashed marker = coach's weekly target</p>}
         </div>
       )}
