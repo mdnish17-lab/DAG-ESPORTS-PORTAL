@@ -46,6 +46,11 @@ revoke all on public.attendance_only_activity_members from public, anon, authent
 grant select on public.attendance_only_activities to authenticated;
 grant select on public.attendance_only_activity_members to authenticated;
 
+-- Repeatable migration: rebuild only this migration's read policies, preserving rows.
+-- Transaction protects against partial security policy updates if a later statement fails.
+drop policy if exists dag_attendance_only_activities_read on public.attendance_only_activities;
+drop policy if exists dag_attendance_only_members_read on public.attendance_only_activity_members;
+
 create policy dag_attendance_only_activities_read on public.attendance_only_activities
   for select to authenticated
   using ((select public.can_manage_dag('edit_matches')));
