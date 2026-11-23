@@ -4,6 +4,7 @@ import Link from 'next/link';
 import AdminLogoutButton from './AdminLogoutButton';
 import PlayerEvaluationPanel from './PlayerEvaluationPanel';
 import MatchEvaluationTracker from './MatchEvaluationTracker';
+import AttendanceOnlyActivities, { isAttendanceOnlyType, ATTENDANCE_ONLY_TYPES } from './AttendanceOnlyActivities';
 import CoachDashboard from './CoachDashboard';
 import WeeklyReportPanel from './WeeklyReportPanel';
 import { getTeamTheme, themeStyle, TEAMS, DEFAULT_TEAM } from '../../lib/teamTheme';
@@ -13,6 +14,7 @@ import { useEffect, useState } from 'react';
 
 const ROLES = ['Coach', 'Manager', 'Midlaner', 'Jungler', 'Roamer', 'Goldlaner', 'Explaner'];
 const MATCH_TYPES = ['Scrim', 'Tournament', 'Scrim Bracket'];
+const MATCH_LOG_TYPES = [...MATCH_TYPES, ...ATTENDANCE_ONLY_TYPES];
 const TABS = ['Coach Dashboard', 'Guide', 'Roster', 'Match Log', 'Player Evaluation', 'Weekly Report', 'Upcoming', 'Achievements'] as const;
 
 // "18:30:00" -> "6:30 PM"
@@ -76,6 +78,7 @@ export default function AdminPage() {
   const [editingMatchId, setEditingMatchId] = useState<number | null>(null);
   const [matchDate, setMatchDate] = useState('');
   const [matchType, setMatchType] = useState('Scrim');
+  const attendanceOnlySelected = isAttendanceOnlyType(matchType);
   const [opponentName, setOpponentName] = useState('');
   const [opponentLogo, setOpponentLogo] = useState('');
   const [dagScore, setDagScore] = useState('0');
@@ -167,6 +170,7 @@ export default function AdminPage() {
   async function handleSaveMatch(e: React.FormEvent) {
     e.preventDefault();
     if (!canMatches) { alert('Only an authorized coach or manager can edit matches.'); return; }
+    if (attendanceOnlySelected) { alert('Use the attendance-only form for Rank or MRO.'); return; }
     if (!matchDate || !opponentName.trim()) { alert('Fill in the date and opponent.'); return; }
     if (dagScore.trim() === '' || oppScore.trim() === '') { alert('Enter both confirmed match scores. No default DRAW result will be used.'); return; }
     const ourScore = Number(dagScore), theirScore = Number(oppScore);
@@ -655,8 +659,24 @@ export default function AdminPage() {
             <div className="rounded-2xl border border-accent/40 bg-gradient-to-r from-[#24101c] to-[#151014] p-6 md:p-8">
               <p className="text-xs font-bold uppercase tracking-[0.24em] text-accent">Step 1 · Register the match</p>
               <h2 className="mt-2 text-2xl md:text-3xl font-black uppercase">Match Log</h2>
-              <p className="mt-2 text-sm text-gray-300">Keep scores, screenshots and match reviews here. Player ratings are entered separately in Player Evaluation, after the match is registered.</p>
+              <p className="mt-2 text-sm text-gray-300">Scrim and Tournament matches use scores and player evaluations. Rank and MRO are attendance-only: date, attendance and screenshots, with no KPI ratings.</p>
             </div>
+            <div className="rounded-xl border border-gray-800 bg-[#1a1a1a]/90 p-5">
+              <label className="block text-xs font-bold uppercase tracking-wider text-gray-300">Match Log type
+                <select value={matchType} disabled={editingMatchId !== null} onChange={(event) => { resetMatchForm(); setMatchType(event.target.value); }}
+                  className="mt-2 w-full max-w-md rounded-lg border border-gray-700 bg-[#121212] px-4 py-3 text-sm text-white outline-none focus:border-accent">
+                  {MATCH_LOG_TYPES.map((type) => <option key={type} value={type}>{type}</option>)}
+                </select>
+              </label>
+            </div>
+            {isAttendanceOnlyType(matchType) ? (
+              <div className="rounded-2xl border border-gray-800 bg-[#1a1a1a]/90 p-6 shadow-xl md:p-8">
+                {canMatches ? (
+                  <AttendanceOnlyActivities key={activeTeam + '-' + matchType} activeTeam={activeTeam} roster={roster}
+                    activityType={matchType} canDelete={canDeleteMatches} />
+                ) : <p className="text-sm text-gray-400">Coach, Manager or Owner access is required to record attendance.</p>}
+              </div>
+            ) : (
             <div className="grid grid-cols-1 gap-7 lg:grid-cols-[minmax(0,1fr)_minmax(0,0.95fr)]">
               <div className="h-fit rounded-2xl border border-gray-800 bg-[#1a1a1a]/90 p-6 shadow-xl md:p-8">
                 <div className="mb-5 flex items-center justify-between gap-3">
@@ -666,9 +686,7 @@ export default function AdminPage() {
                 {canMatches ? <form onSubmit={handleSaveMatch} className="flex flex-col gap-5">
                   <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
                     <label className="text-xs font-bold text-gray-400">Match date<input type="date" value={matchDate} onChange={(e) => setMatchDate(e.target.value)} className="mt-2 w-full rounded-lg border border-gray-700 bg-[#121212] px-3 py-3 text-white outline-none focus:border-accent" required /></label>
-                    <label className="text-xs font-bold text-gray-400">Type<select value={matchType} onChange={(e) => setMatchType(e.target.value)} className="mt-2 w-full rounded-lg border border-gray-700 bg-[#121212] px-3 py-3 text-white outline-none focus:border-accent">
-                      {MATCH_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
-                    </select></label>
+                    <label className="text-xs font-bold text-gray-400">Type<input type="text" value={matchType} readOnly className="mt-2 w-full rounded-lg border border-gray-700 bg-[#121212] px-3 py-3 text-gray-300" /></label>
                     <label className="text-xs font-bold text-gray-400">Opponent<input type="text" value={opponentName} placeholder="Opponent team" onChange={(e) => setOpponentName(e.target.value)} className="mt-2 w-full rounded-lg border border-gray-700 bg-[#121212] px-3 py-3 text-white outline-none focus:border-accent" required /></label>
                   </div>
                   <label className="text-xs font-bold text-gray-400">Opponent logo URL (optional)
@@ -694,6 +712,7 @@ export default function AdminPage() {
                 canEdit={canMatches} canDelete={canDeleteMatches}
                 onDelete={(id) => { void deleteRecord('matches', id); }} />
             </div>
+            )}
           </div>
         )}
 
