@@ -63,12 +63,12 @@ export default function DagSiteAdminEditor() {
         supabase.from('dag_team_introductions').select('team,intro'),
       ]);
       if (cancelled) return;
-      if (site.error || achievementsResult.error || featuredResult.error || introsResult.error) {
+      if (site.error || achievementsResult.error || featuredResult.error) {
         setError('Could not load website settings. SQL 13 must be installed first. ' +
-          (site.error?.message || achievementsResult.error?.message || featuredResult.error?.message || introsResult.error?.message || ''));
+          (site.error?.message || achievementsResult.error?.message || featuredResult.error?.message || ''));
       } else {
         if (site.data) setProfile({ ...initial, ...site.data });
-        setTeamIntros(Object.fromEntries((introsResult.data || []).map(({ team, intro }) => [team, intro])));
+        if (!introsResult.error) setTeamIntros(Object.fromEntries((introsResult.data || []).map(({ team, intro }) => [team, intro])));
         setAchievements((achievementsResult.data || []) as Achievement[]);
         const selectedMap: Record<number, boolean> = {};
         const orderMap: Record<number, number> = {};
