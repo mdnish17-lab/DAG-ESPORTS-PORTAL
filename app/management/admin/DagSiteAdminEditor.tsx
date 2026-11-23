@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '../../../lib/supabase';
+import { TEAM_DIVISIONS } from '../../../lib/teamTheme';
 
 type Profile = {
   id: number;
@@ -23,6 +24,7 @@ const initial: Profile = {
   montrix_intro: 'Meet DAG Montrix and follow their esports journey.',
   owner_name: '', owner_title: 'Founder & Owner', owner_bio: '', owner_photo_url: '',
 };
+const EXTRA_TEAMS = Object.values(TEAM_DIVISIONS).flat().filter((name) => name !== 'DAG Ladies' && name !== 'DAG Montrix');
 const textField = 'mt-2 w-full rounded-xl border border-gray-700 bg-[#0e0b10] px-4 py-3 text-base text-white outline-none focus:border-pink-400';
 const fields: Array<{ key: keyof Omit<Profile, 'id'>; label: string; description: string; multiline?: boolean; max: number }> = [
   { key: 'intro_title', label: 'Website heading', description: 'Headline beneath the DAG logo', max: 100 },
@@ -37,6 +39,8 @@ const fields: Array<{ key: keyof Omit<Profile, 'id'>; label: string; description
 
 export default function DagSiteAdminEditor() {
   const [profile, setProfile] = useState<Profile>(initial);
+  const [teamIntros, setTeamIntros] = useState<Record<string, string>>({});
+  const [savingIntros, setSavingIntros] = useState(false);
   const [achievements, setAchievements] = useState<Achievement[]>([]);
   const [selected, setSelected] = useState<Record<number, boolean>>({});
   const [orders, setOrders] = useState<Record<number, number>>({});
@@ -52,17 +56,19 @@ export default function DagSiteAdminEditor() {
       const { data: role, error: roleError } = await supabase.rpc('my_management_role');
       if (cancelled) return;
       if (roleError || role !== 'owner') { setError('Owner permissions required to edit DAG website content.'); setLoaded(true); return; }
-      const [site, achievementsResult, featuredResult] = await Promise.all([
+      const [site, achievementsResult, featuredResult, introsResult] = await Promise.all([
         supabase.from('dag_site_profile').select('*').eq('id', 1).maybeSingle(),
         supabase.from('team_achievements').select('id,team,tournament,placement,date,image_url').order('date', { ascending: false }),
         supabase.from('dag_hall_of_fame').select('achievement_id,featured_order'),
+        supabase.from('dag_team_introductions').select('team,intro'),
       ]);
       if (cancelled) return;
-      if (site.error || achievementsResult.error || featuredResult.error) {
+      if (site.error || achievementsResult.error || featuredResult.error || introsResult.error) {
         setError('Could not load website settings. SQL 13 must be installed first. ' +
-          (site.error?.message || achievementsResult.error?.message || featuredResult.error?.message || ''));
+          (site.error?.message || achievementsResult.error?.message || featuredResult.error?.message || introsResult.error?.message || ''));
       } else {
         if (site.data) setProfile({ ...initial, ...site.data });
+        setTeamIntros(Object.fromEntries((introsResult.data || []).map(({ team, intro }) => [team, intro])));
         setAchievements((achievementsResult.data || []) as Achievement[]);
         const selectedMap: Record<number, boolean> = {};
         const orderMap: Record<number, number> = {};
@@ -95,6 +101,25 @@ export default function DagSiteAdminEditor() {
       setNotice('DAG Esports website introduction and owner profile saved. Refresh the public homepage to view changes.');
     } catch (problem) { setError(problem instanceof Error ? problem.message : 'Could not save profile.'); }
     finally { setSavingProfile(false); }
+  }
+
+  async function saveIntros() {
+    setError(''); setNotice('');
+    setSavingIntros(true);
+    try {
+      await verifyOwner();
+      const payload = EXTRA_TEAMS.map((team) => ({
+        team, intro: (teamIntros[team] || '').trim(),
+        updated_at: new Date().toISOString(),
+      }));
+      const { error: writeError } = await supabase.from('dag_team_introductions').upsert(payload, { onConflict: 'team' });
+      if (writeError) throw writeError;
+      setNotice('All five new team introductions saved. Refresh the homepage to view changes.');
+    } catch (problem) {
+      setError(problem instanceof Error ? problem.message : 'Could not save team introductions.');
+    } finally {
+      setSavingIntros(false);
+    }
   }
 
   async function saveFame() {
@@ -162,9 +187,31 @@ export default function DagSiteAdminEditor() {
             </button>
           </section>
 
+          <section className="rounded-2xl border border-gray-800 bg-[#171217] p-5 md:p-8">
+            <h2 className="text-xl font-black uppercase text-pink-300">New Team Introductions</h2>
+            <p className="mt-2 text-sm text-gray-400">
+              The existing DAG Ladies and DAG Montrix introductions remain editable above.
+              Set the homepage descriptions for the five new teams here.
+            </p>
+            <div className="mt-6 grid gap-5 md:grid-cols-2">
+              {EXTRA_TEAMS.map((team) => (
+                <label key={team} className="block text-sm font-bold text-gray-200">
+                  {team}
+                  <textarea rows={3} maxLength={1200} className={textField + ' resize-y'}
+                    value={teamIntros[team] || ''}
+                    onChange={(event) => setTeamIntros((previous) => ({ ...previous, [team]: event.target.value }))} />
+                </label>
+              ))}
+            </div>
+            <button type="button" onClick={() => { void saveIntros(); }} disabled={savingIntros}
+              className="mt-6 min-h-12 rounded-xl bg-pink-500 px-6 py-3 text-sm font-black uppercase text-black hover:bg-pink-400 disabled:opacity-50">
+              {savingIntros ? 'Saving...' : 'Save New Team Introductions'}
+            </button>
+          </section>
+
           <section className="rounded-2xl border border-amber-700/30 bg-[#171217] p-5 md:p-8">
             <h2 className="text-xl font-black uppercase text-amber-300">DAG Esports Hall of Fame</h2>
-            <p className="mt-2 text-sm leading-6 text-gray-400">Choose achievements already created by DAG Ladies or DAG Montrix. Select featured entries and adjust their display order (smaller number first). To add new achievements, use Coaches / Manager → Achievements.</p>
+            <p className="mt-2 text-sm leading-6 text-gray-400">Choose achievements already created by any DAG Esports team. Select featured entries and adjust their display order (smaller number first). To add new achievements, use Coaches / Manager → Achievements.</p>
             {achievements.length === 0 ? <p className="mt-5 rounded-xl border border-dashed border-gray-700 p-5 text-sm text-gray-400">No existing team achievements to feature yet.</p> :
               <div className="mt-5 grid gap-3 md:grid-cols-2">
                 {achievements.map((item) => (
