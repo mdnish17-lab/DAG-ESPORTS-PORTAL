@@ -3,11 +3,11 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import TeamNavigation from '../../lib/TeamNavigation';
-import { getTeamTheme, themeStyle } from '../../lib/teamTheme';
+import { getTeamTheme, themeStyle, TEAMS, DEFAULT_TEAM } from '../../lib/teamTheme';
+import TeamSelector from '../../lib/TeamSelector';
 import { supabase } from '../../lib/supabase';
 import { useEffect, useState } from 'react';
 
-const TEAMS = ['DAG Ladies', 'DAG Montrix'];
 const CURRENT = '/roster';
 
 const isStaff = (role: string) => {
@@ -16,7 +16,7 @@ const isStaff = (role: string) => {
 };
 
 export default function RosterPage() {
-  const [activeTeam, setActiveTeamState] = useState<string>('DAG Ladies');
+  const [activeTeam, setActiveTeamState] = useState<string>(DEFAULT_TEAM);
   const [teamReady, setTeamReady] = useState(false);
   useEffect(() => {
     const saved = localStorage.getItem('dag-active-team');
@@ -107,15 +107,7 @@ export default function RosterPage() {
       </div>
 
       <div className="relative z-10 w-full max-w-5xl flex flex-col items-center">
-        <div className="flex gap-3 mb-6 p-1.5 rounded-full bg-black/50 border border-white/10 backdrop-blur">
-          {TEAMS.map((team) => (
-            <button key={team} type="button" onClick={() => setActiveTeam(team)}
-              className={`px-7 py-2 rounded-full font-extrabold tracking-widest uppercase text-sm transition-all ${
-                activeTeam === team ? 'bg-accent text-white shadow-[0_0_20px_var(--accent-glow)]' : 'text-gray-500 hover:text-white'}`}>
-              {team}
-            </button>
-          ))}
-        </div>
+        <div className="mb-6 flex w-full justify-center"><TeamSelector value={activeTeam} onChange={setActiveTeam} /></div>
 
         <div className="relative bg-accent-deep/80 backdrop-blur-md p-8 md:p-10 rounded-2xl border border-accent/30 shadow-[0_10px_50px_var(--accent-glow-soft)] w-full flex flex-col md:flex-row justify-between items-center gap-8 mb-10 overflow-hidden">
           <div className="absolute -top-24 -left-24 w-64 h-64 rounded-full bg-accent/20 blur-3xl pointer-events-none"></div>
