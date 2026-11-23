@@ -27,7 +27,7 @@ export default function TeamNavigation({ current }: { current: string }) {
           </Link>
         ))}
         <Link href="/management"
-          className="col-span-2 flex min-h-11 min-w-0 items-center justify-center rounded-xl border border-pink-500/35 bg-pink-500/10 px-3 py-2.5 text-center text-xs font-black uppercase tracking-wide text-pink-200 hover:bg-pink-500/20 sm:col-span-3 lg:ml-auto">
+          className="col-span-2 flex min-h-11 min-w-0 items-center justify-center rounded-xl border border-accent/35 bg-accent/10 px-3 py-2.5 text-center text-xs font-black uppercase tracking-wide text-accent hover:bg-accent/20 sm:col-span-3 lg:ml-auto">
           Management
         </Link>
       </div>

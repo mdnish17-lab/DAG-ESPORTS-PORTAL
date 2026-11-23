@@ -28,14 +28,14 @@ function PasswordField({ id, label, value, onChange, autoComplete, minLength }: 
           autoComplete={autoComplete}
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="block w-full rounded-xl border border-gray-700 bg-[#121212] px-4 py-3 pr-20 text-white outline-none focus:border-pink-400"
+          className="block w-full rounded-xl border border-gray-700 bg-[#121212] px-4 py-3 pr-20 text-white outline-none focus:border-red-400"
         />
         <button
           type="button"
           aria-label={`${visible ? 'Hide' : 'Show'} ${label.toLowerCase()}`}
           aria-pressed={visible}
           onClick={() => setVisible(!visible)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-sm font-bold text-pink-300 hover:bg-pink-500/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pink-400"
+          className="absolute right-3 top-1/2 -translate-y-1/2 rounded-md px-2 py-1 text-sm font-bold text-red-300 hover:bg-red-500/10 focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-red-400"
         >
           {visible ? 'Hide' : 'Show'}
         </button>
@@ -105,8 +105,8 @@ export default function AdminPasswordChange() {
   }
 
   return (
-    <section className="mx-auto max-w-xl rounded-2xl border border-pink-500/25 bg-[#1a1a1a]/90 p-6 shadow-xl md:p-8">
-      <h2 className="text-2xl font-black uppercase tracking-wide text-pink-400">Management Account</h2>
+    <section className="mx-auto max-w-xl rounded-2xl border border-red-500/25 bg-[#1a1a1a]/90 p-6 shadow-xl md:p-8">
+      <h2 className="text-2xl font-black uppercase tracking-wide text-red-400">Management Account</h2>
       <p className="mt-2 text-sm text-gray-400">Change the password for your currently signed-in approved management account only.</p>
       <div className="mt-5 rounded-lg border border-gray-700 bg-black/35 p-3 text-sm">
         <span className="text-gray-400">Signed in as:</span> <span className="font-bold text-white">{email || 'Loading account...'}</span>
@@ -120,7 +120,7 @@ export default function AdminPasswordChange() {
           onChange={setConfirmPassword} autoComplete="new-password" minLength={MIN_PASSWORD_LENGTH} />
         <p className="text-xs text-gray-400">Six characters is the form minimum. A longer, unique password (12+ characters) is much safer. Supabase may enforce stricter rules.</p>
         {message && <p role="status" className={`rounded-lg border px-4 py-3 text-sm ${success ? 'border-green-700/50 bg-green-950/25 text-green-300' : 'border-red-800/50 bg-red-950/25 text-red-300'}`}>{message}</p>}
-        <button type="submit" disabled={busy || !email} className="w-full rounded-xl bg-pink-500 px-5 py-3 font-black uppercase text-black hover:bg-pink-400 disabled:opacity-60">
+        <button type="submit" disabled={busy || !email} className="w-full rounded-xl bg-red-500 px-5 py-3 font-black uppercase text-black hover:bg-red-400 disabled:opacity-60">
           {busy ? 'Updating password...' : 'Change my password'}
         </button>
       </form>

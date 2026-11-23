@@ -417,7 +417,7 @@ export default function AdminPage() {
         </div>
 
         <div className="mb-8">
-          <h1 className="text-3xl md:text-4xl font-black uppercase tracking-wide bg-gradient-to-r from-accent via-pink-300 to-white bg-clip-text text-transparent">Coaches / Manager</h1>
+          <h1 className="text-3xl md:text-4xl font-black uppercase tracking-wide bg-gradient-to-r from-accent via-accent-dark to-white bg-clip-text text-transparent">Coaches / Manager</h1>
           <p className="text-gray-500 text-sm mt-1 uppercase tracking-[0.3em]">{activeTeam} · {managementRole === 'none' ? 'Verifying role' : managementRole + ' access'}</p>
         </div>
 

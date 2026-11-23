@@ -75,17 +75,17 @@ export default function DagEsportsHome() {
   }
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[#09060b] text-white">
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-[760px] bg-[radial-gradient(ellipse_at_top,rgba(200,25,107,0.23),transparent_63%)]" />
+    <main className="relative min-h-screen overflow-hidden bg-[#090808] text-white">
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-[760px] bg-[radial-gradient(ellipse_at_top,rgba(235,49,41,0.23),transparent_63%)]" />
       <div className="relative z-10 mx-auto max-w-6xl px-4 pb-20 pt-10 sm:px-6 md:pt-16">
-        <section aria-labelledby="dag-title" className="relative overflow-hidden rounded-[2rem] border border-pink-500/30 bg-gradient-to-b from-[#2a1021] via-[#171018] to-[#0e0b10] px-5 py-10 text-center shadow-[0_28px_100px_rgba(0,0,0,0.4)] sm:px-10 md:py-16">
-          <div className="pointer-events-none absolute -right-16 -top-20 h-80 w-80 rounded-full bg-pink-600/10 blur-[95px]" />
-          <div className="relative mx-auto mb-6 flex h-32 w-32 items-center justify-center rounded-full border border-pink-300/30 bg-black/30 p-3 shadow-[0_0_60px_rgba(217,70,139,0.2)] sm:h-40 sm:w-40">
-            <Image src="/dag-logo.jpg" alt="DAG Esports official logo" width={180} height={180}
+        <section aria-labelledby="dag-title" className="relative overflow-hidden rounded-[2rem] border border-red-500/30 bg-gradient-to-b from-[#291111] via-[#171010] to-[#0e0b0b] px-5 py-10 text-center shadow-[0_28px_100px_rgba(0,0,0,0.4)] sm:px-10 md:py-16">
+          <div className="pointer-events-none absolute -right-16 -top-20 h-80 w-80 rounded-full bg-red-600/10 blur-[95px]" />
+          <div className="relative mx-auto mb-6 flex h-32 w-32 items-center justify-center rounded-full border border-red-300/30 bg-black/30 p-3 shadow-[0_0_60px_rgba(235,63,51,0.20)] sm:h-40 sm:w-40">
+            <Image src="/team-logos/dag-esports.webp" alt="DAG Esports official logo" width={180} height={180}
               className="h-full w-full rounded-full object-contain" priority />
           </div>
-          <p className="text-xs font-black uppercase tracking-[0.45em] text-pink-300">De Ant Gaming</p>
-          <h1 id="dag-title" className="mt-3 text-4xl font-black uppercase tracking-tight sm:text-6xl md:text-7xl">DAG <span className="text-pink-400">Esports</span></h1>
+          <p className="text-xs font-black uppercase tracking-[0.45em] text-red-300">De Ant Gaming</p>
+          <h1 id="dag-title" className="mt-3 text-4xl font-black uppercase tracking-tight sm:text-6xl md:text-7xl">DAG <span className="text-red-400">Esports</span></h1>
           <h2 className="mt-5 text-xl font-black text-white sm:text-2xl">{profile.intro_title}</h2>
           <p className="mx-auto mt-3 max-w-3xl whitespace-pre-line text-sm leading-7 text-gray-300 sm:text-base">{profile.intro_body}</p>
           <div className="mt-7 flex flex-wrap justify-center gap-2 text-[11px] font-black uppercase tracking-widest text-gray-400">
@@ -96,19 +96,19 @@ export default function DagEsportsHome() {
 
         <DagHomeNavigation />
 
-        <section id="about-owner" className="mt-12 scroll-mt-6 rounded-3xl border border-gray-800 bg-[#171218]/90 p-5 sm:p-8">
-          <p className="text-xs font-black uppercase tracking-[0.25em] text-pink-400">Meet the leadership</p>
+        <section id="about-owner" className="mt-12 scroll-mt-6 rounded-3xl border border-gray-800 bg-[#171313]/90 p-5 sm:p-8">
+          <p className="text-xs font-black uppercase tracking-[0.25em] text-red-400">Meet the leadership</p>
           <h2 className="mt-2 text-2xl font-black uppercase sm:text-3xl">Meet the Owner</h2>
           <div className="mt-6 flex flex-col items-center gap-6 md:flex-row md:items-start">
-            <div className="flex h-48 w-44 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-pink-500/30 bg-gradient-to-br from-pink-950/70 to-black/60">
+            <div className="flex h-48 w-44 shrink-0 items-center justify-center overflow-hidden rounded-2xl border border-red-500/30 bg-gradient-to-br from-red-950/70 to-black/60">
               {profile.owner_photo_url
                 ? <Image src={profile.owner_photo_url} width={200} height={220} unoptimized alt={profile.owner_name ? profile.owner_name + ' — DAG Esports owner' : 'DAG Esports owner'}
                     className="h-full w-full object-cover" />
-                : <span className="text-center text-5xl text-pink-300/65" aria-label="Owner portrait pending">✦</span>}
+                : <span className="text-center text-5xl text-red-300/65" aria-label="Owner portrait pending">✦</span>}
             </div>
             <div className="min-w-0 flex-1 text-center md:text-left">
               <h3 className="text-2xl font-black text-white">{profile.owner_name || 'Owner profile coming soon'}</h3>
-              <p className="mt-1 text-sm font-bold uppercase tracking-wider text-pink-300">{profile.owner_title}</p>
+              <p className="mt-1 text-sm font-bold uppercase tracking-wider text-red-300">{profile.owner_title}</p>
               <p className="mt-4 whitespace-pre-line text-sm leading-7 text-gray-300">{profile.owner_bio || 'The owner’s introduction and biography can be published from Management → Admin.'}</p>
             </div>
           </div>
@@ -116,15 +116,15 @@ export default function DagEsportsHome() {
 
         <section id="dag-teams" className="mt-14 scroll-mt-6">
           <div className="text-center">
-            <p className="text-xs font-black uppercase tracking-[0.25em] text-pink-400">Explore our divisions</p>
+            <p className="text-xs font-black uppercase tracking-[0.25em] text-red-400">Explore our divisions</p>
             <h2 className="mt-2 text-3xl font-black uppercase sm:text-4xl">Team List</h2>
             <p className="mt-3 text-sm text-gray-400">Explore seven teams across our Men and Ladies Divisions. Select a team for performance, roster, achievements and evaluations.</p>
           </div>
           <div className="mt-8 space-y-11">
             {Object.entries(TEAM_DIVISIONS).map(([division, names]) => (
-              <div key={division} className="rounded-3xl border border-white/10 bg-[#140f15]/85 p-4 sm:p-6">
+              <div key={division} className="rounded-3xl border border-white/10 bg-[#140f0f]/85 p-4 sm:p-6">
                 <div className="mb-5 flex items-center gap-3">
-                  <span className="h-7 w-1.5 rounded-full bg-pink-400" aria-hidden="true" />
+                  <span className="h-7 w-1.5 rounded-full bg-red-400" aria-hidden="true" />
                   <h3 className="text-xl font-black uppercase tracking-wider text-white sm:text-2xl">{division}</h3>
                   <span className="ml-auto rounded-full border border-white/15 px-3 py-1 text-xs text-gray-400">{names.length} Teams</span>
                 </div>
@@ -187,7 +187,7 @@ export default function DagEsportsHome() {
 
         <footer className="mt-16 border-t border-gray-800 pt-7 text-center text-xs text-gray-500">
           <p>© {new Date().getFullYear()} DAG Esports · De Ant Gaming</p>
-          <Link href="/management" className="mt-3 inline-block text-pink-300 hover:underline">Management access</Link>
+          <Link href="/management" className="mt-3 inline-block text-red-300 hover:underline">Management access</Link>
         </footer>
       </div>
     </main>

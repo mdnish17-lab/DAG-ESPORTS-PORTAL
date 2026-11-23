@@ -25,7 +25,7 @@ const initial: Profile = {
   owner_name: '', owner_title: 'Founder & Owner', owner_bio: '', owner_photo_url: '',
 };
 const EXTRA_TEAMS = Object.values(TEAM_DIVISIONS).flat().filter((name) => name !== 'DAG Ladies' && name !== 'DAG Montrix');
-const textField = 'mt-2 w-full rounded-xl border border-gray-700 bg-[#0e0b10] px-4 py-3 text-base text-white outline-none focus:border-pink-400';
+const textField = 'mt-2 w-full rounded-xl border border-gray-700 bg-[#0e0b0b] px-4 py-3 text-base text-white outline-none focus:border-red-400';
 const fields: Array<{ key: keyof Omit<Profile, 'id'>; label: string; description: string; multiline?: boolean; max: number }> = [
   { key: 'intro_title', label: 'Website heading', description: 'Headline beneath the DAG logo', max: 100 },
   { key: 'intro_body', label: 'DAG Esports introduction', description: 'A welcome message about De Ant Gaming', multiline: true, max: 2000 },
@@ -157,8 +157,8 @@ export default function DagSiteAdminEditor() {
 
   return (
     <div className="space-y-7">
-      <header className="rounded-3xl border border-pink-500/30 bg-gradient-to-br from-[#26101f] to-[#0e0b10] p-6 md:p-9">
-        <p className="text-xs font-black uppercase tracking-wider text-pink-300">Owner-only website editor</p>
+      <header className="rounded-3xl border border-red-500/30 bg-gradient-to-br from-[#26100f] to-[#0e0b0b] p-6 md:p-9">
+        <p className="text-xs font-black uppercase tracking-wider text-red-300">Owner-only website editor</p>
         <h1 className="mt-3 text-3xl font-black uppercase md:text-4xl">DAG Esports Admin</h1>
         <p className="mt-2 text-sm leading-6 text-gray-300">Manage the official homepage content and choose which existing team achievements appear in the DAG-wide Hall of Fame.</p>
       </header>
@@ -167,7 +167,7 @@ export default function DagSiteAdminEditor() {
       {!loaded ? <p role="status" className="text-sm text-gray-400">Loading website settings...</p> : !error || achievements.length > 0 ? (
         <>
           <section className="rounded-2xl border border-gray-800 bg-[#171217] p-5 md:p-8">
-            <h2 className="text-xl font-black uppercase text-pink-300">Website Introduction &amp; Owner Profile</h2>
+            <h2 className="text-xl font-black uppercase text-red-300">Website Introduction &amp; Owner Profile</h2>
             <div className="mt-6 grid gap-5 md:grid-cols-2">
               {fields.map((f) => (
                 <label key={f.key} className={'block text-sm font-bold text-gray-200 ' + (f.multiline ? 'md:col-span-2' : '')}>
@@ -182,13 +182,13 @@ export default function DagSiteAdminEditor() {
               ))}
             </div>
             <button type="button" onClick={() => { void saveProfile(); }} disabled={savingProfile}
-              className="mt-6 min-h-12 rounded-xl bg-pink-500 px-6 py-3 text-sm font-black uppercase text-black hover:bg-pink-400 disabled:opacity-50">
+              className="mt-6 min-h-12 rounded-xl bg-red-500 px-6 py-3 text-sm font-black uppercase text-black hover:bg-red-400 disabled:opacity-50">
               {savingProfile ? 'Saving...' : 'Save Website & Owner Profile'}
             </button>
           </section>
 
           <section className="rounded-2xl border border-gray-800 bg-[#171217] p-5 md:p-8">
-            <h2 className="text-xl font-black uppercase text-pink-300">New Team Introductions</h2>
+            <h2 className="text-xl font-black uppercase text-red-300">New Team Introductions</h2>
             <p className="mt-2 text-sm text-gray-400">
               The existing DAG Ladies and DAG Montrix introductions remain editable above.
               Set the homepage descriptions for the five new teams here.
@@ -204,7 +204,7 @@ export default function DagSiteAdminEditor() {
               ))}
             </div>
             <button type="button" onClick={() => { void saveIntros(); }} disabled={savingIntros}
-              className="mt-6 min-h-12 rounded-xl bg-pink-500 px-6 py-3 text-sm font-black uppercase text-black hover:bg-pink-400 disabled:opacity-50">
+              className="mt-6 min-h-12 rounded-xl bg-red-500 px-6 py-3 text-sm font-black uppercase text-black hover:bg-red-400 disabled:opacity-50">
               {savingIntros ? 'Saving...' : 'Save New Team Introductions'}
             </button>
           </section>
@@ -215,11 +215,11 @@ export default function DagSiteAdminEditor() {
             {achievements.length === 0 ? <p className="mt-5 rounded-xl border border-dashed border-gray-700 p-5 text-sm text-gray-400">No existing team achievements to feature yet.</p> :
               <div className="mt-5 grid gap-3 md:grid-cols-2">
                 {achievements.map((item) => (
-                  <div key={item.id} className="rounded-xl border border-gray-700 bg-[#0e0b10] p-4">
+                  <div key={item.id} className="rounded-xl border border-gray-700 bg-[#0e0b0b] p-4">
                     <label className="flex cursor-pointer items-start gap-3">
                       <input type="checkbox" checked={!!selected[item.id]}
                         onChange={(e) => setSelected((prev) => ({ ...prev, [item.id]: e.target.checked }))}
-                        className="mt-1 h-5 w-5 accent-pink-500" />
+                        className="mt-1 h-5 w-5 accent-red-500" />
                       <span className="min-w-0 flex-1">
                         <span className="block font-bold">{item.tournament}</span>
                         <span className="mt-1 block text-xs text-gray-400">{item.team} · {item.placement} · {item.date}</span>
@@ -245,8 +245,8 @@ export default function DagSiteAdminEditor() {
         </>
       ) : null}
       <div className="flex flex-wrap gap-3">
-        <Link href="/management" className="rounded-xl border border-gray-700 px-4 py-3 text-xs font-black uppercase text-gray-200 hover:border-pink-400">← Management</Link>
-        <Link href="/" className="rounded-xl border border-gray-700 px-4 py-3 text-xs font-black uppercase text-gray-200 hover:border-pink-400">View Public Homepage</Link>
+        <Link href="/management" className="rounded-xl border border-gray-700 px-4 py-3 text-xs font-black uppercase text-gray-200 hover:border-red-400">← Management</Link>
+        <Link href="/" className="rounded-xl border border-gray-700 px-4 py-3 text-xs font-black uppercase text-gray-200 hover:border-red-400">View Public Homepage</Link>
       </div>
     </div>
   );

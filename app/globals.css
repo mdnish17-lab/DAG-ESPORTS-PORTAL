@@ -16,14 +16,14 @@
   }
 }
 
-/* ===== Team theme colors (set per team on <main>; these are the defaults) ===== */
+/* ===== Organization defaults: red. Per-team overrides remain scoped to each team's <main>. ===== */
 :root {
-  --accent-color: #c8196b;
-  --accent-dark: #9e1254;
-  --accent-deep: #2a0a18;
-  --accent-glow: rgba(200, 25, 107, 0.55);
-  --accent-glow-soft: rgba(200, 25, 107, 0.22);
-  --dag-bg: #0a0508;
+  --accent-color: #ef3f33;
+  --accent-dark: #ba2925;
+  --accent-deep: #27100e;
+  --accent-glow: rgba(239, 63, 51, 0.55);
+  --accent-glow-soft: rgba(239, 63, 51, 0.22);
+  --dag-bg: #090808;
 }
 
 /* Lets you use bg-accent, text-accent, border-accent/50, from-accent ... */
@@ -52,10 +52,10 @@ body {
   color: #ffffff;
 }
 
-/* ===== Scrollbar (dark + pink) ===== */
+/* ===== Scrollbar (dark + red) ===== */
 * {
   scrollbar-width: thin;
-  scrollbar-color: #3a1626 #0a0508;
+  scrollbar-color: #45201c #090808;
 }
 
 ::-webkit-scrollbar {
@@ -64,11 +64,11 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-  background: #0a0508;
+  background: #090808;
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #3a1626;
+  background: #45201c;
   border-radius: 9999px;
 }
 
@@ -84,7 +84,7 @@ input[type="time"] {
 
 input[type="date"]::-webkit-calendar-picker-indicator,
 input[type="time"]::-webkit-calendar-picker-indicator {
-  filter: invert(60%) sepia(60%) saturate(2200%) hue-rotate(305deg) brightness(105%);
+  filter: invert(60%) sepia(60%) saturate(2200%) hue-rotate(340deg) brightness(105%);
   cursor: pointer;
   opacity: 0.9;
 }
@@ -123,7 +123,7 @@ input[type="number"] {
   -moz-appearance: textfield;
 }
 
-/* DAG Esports subtle ambient background — reuses the actual organization logo. */
+/* DAG Esports red organization watermark, using the uploaded DAG Esports team logo. */
 /* Fixed layer is decorative only; all page content remains fully interactive. */
 .dag-animated-background {
   isolation: isolate;
@@ -136,12 +136,12 @@ input[type="number"] {
   left: 50%;
   top: 48%;
   transform: translate(-50%, -50%);
-  background-image: url('/dag-logo.jpg');
+  background-image: url('/team-logos/dag-esports.webp');
   background-position: center;
   background-repeat: no-repeat;
   background-size: contain;
   opacity: 0.075;
-  filter: grayscale(10%) saturate(0.7) drop-shadow(0 0 44px rgba(239, 68, 158, 0.22));
+  filter: saturate(0.85) drop-shadow(0 0 44px rgba(239, 63, 51, 0.22));
   animation: dagEmblemDrift 22s ease-in-out infinite alternate;
   will-change: transform, opacity;
 }
@@ -152,9 +152,9 @@ input[type="number"] {
   height: min(84vmin, 830px);
   left: 50%;
   top: 48%;
-  border: 1px solid rgba(255, 108, 188, 0.085);
+  border: 1px solid rgba(255, 90, 76, 0.10);
   border-radius: 50%;
-  box-shadow: 0 0 90px rgba(200, 25, 107, 0.045), inset 0 0 110px rgba(200, 25, 107, 0.035);
+  box-shadow: 0 0 90px rgba(239, 63, 51, 0.045), inset 0 0 110px rgba(239, 63, 51, 0.035);
   animation: dagRingPulse 13s ease-in-out infinite alternate;
 }
 
@@ -171,13 +171,13 @@ input[type="number"] {
 .dag-ambient-glow-left {
   top: 6%;
   left: -24%;
-  background: radial-gradient(circle, rgba(175, 30, 99, 0.20), transparent 70%);
+  background: radial-gradient(circle, rgba(185, 34, 30, 0.23), transparent 70%);
 }
 
 .dag-ambient-glow-right {
   bottom: -15%;
   right: -24%;
-  background: radial-gradient(circle, rgba(231, 70, 153, 0.16), transparent 70%);
+  background: radial-gradient(circle, rgba(235, 69, 51, 0.20), transparent 70%);
   animation-delay: -10s;
 }
 
