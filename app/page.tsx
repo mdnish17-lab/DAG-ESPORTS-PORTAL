@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import { supabase } from '../lib/supabase';
-import { getTeamTheme } from '../lib/teamTheme';
+import { getTeamTheme, themeStyle, TEAM_DIVISIONS } from '../lib/teamTheme';
 import DagHomeNavigation from '../lib/DagHomeNavigation';
 
 type SiteProfile = {
@@ -25,10 +25,13 @@ const fallback: SiteProfile = {
   montrix_intro: 'Meet DAG Montrix and follow their esports journey.',
   owner_name: '', owner_title: 'Founder & Owner', owner_bio: '', owner_photo_url: '',
 };
-const teams = [
-  { name: 'DAG Ladies', description: 'ladies_intro' as const },
-  { name: 'DAG Montrix', description: 'montrix_intro' as const },
-];
+const fallbackIntros: Record<string, string> = {
+  'DAG Esports': 'Discover DAG Esports in the Men Division.',
+  'DAG Inferyx': 'Discover DAG Inferyx in the Men Division.',
+  'DAG Ascend': 'Discover DAG Ascend in the Men Division.',
+  'DAG Junior': 'Discover DAG Junior in the Men Division.',
+  'DAG Valkyrie': 'Discover DAG Valkyrie in the Ladies Division.',
+};
 const displayDate = (value: string) => {
   const d = new Date(value + 'T12:00:00Z');
   return isNaN(d.getTime()) ? value : d.toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'UTC' });
@@ -36,19 +39,22 @@ const displayDate = (value: string) => {
 
 export default function DagEsportsHome() {
   const [profile, setProfile] = useState<SiteProfile>(fallback);
+  const [teamIntros, setTeamIntros] = useState<Record<string, string>>({});
   const [featured, setFeatured] = useState<Achievement[]>([]);
   const [loading, setLoading] = useState(true);
   const [notice, setNotice] = useState('');
   useEffect(() => {
     let cancelled = false;
     async function load() {
-      const [site, selections, achievements] = await Promise.all([
+      const [site, selections, achievements, intros] = await Promise.all([
         supabase.from('dag_site_profile').select('intro_title,intro_body,ladies_intro,montrix_intro,owner_name,owner_title,owner_bio,owner_photo_url').eq('id', 1).maybeSingle(),
         supabase.from('dag_hall_of_fame').select('achievement_id,featured_order').order('featured_order').order('achievement_id'),
         supabase.from('team_achievements').select('id,team,date,placement,tournament,venue,image_url'),
+        supabase.from('dag_team_introductions').select('team,intro'),
       ]);
       if (cancelled) return;
       if (site.data) setProfile({ ...fallback, ...site.data });
+      if (!intros.error) setTeamIntros(Object.fromEntries((intros.data || []).map(({ team, intro }) => [team, intro])));
       const selectionsOk = !selections.error && !achievements.error;
       if (selectionsOk) {
         const achievementMap = new Map(((achievements.data || []) as Achievement[]).map((item) => [item.id, item]));
@@ -83,7 +89,7 @@ export default function DagEsportsHome() {
           <h2 className="mt-5 text-xl font-black text-white sm:text-2xl">{profile.intro_title}</h2>
           <p className="mx-auto mt-3 max-w-3xl whitespace-pre-line text-sm leading-7 text-gray-300 sm:text-base">{profile.intro_body}</p>
           <div className="mt-7 flex flex-wrap justify-center gap-2 text-[11px] font-black uppercase tracking-widest text-gray-400">
-            <span className="rounded-full border border-white/15 px-4 py-2">Two Teams</span>
+            <span className="rounded-full border border-white/15 px-4 py-2">Seven Teams</span>
             <span className="rounded-full border border-white/15 px-4 py-2">One Organization</span>
           </div>
         </section>
@@ -112,20 +118,38 @@ export default function DagEsportsHome() {
           <div className="text-center">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-pink-400">Explore our divisions</p>
             <h2 className="mt-2 text-3xl font-black uppercase sm:text-4xl">Team List</h2>
-            <p className="mt-3 text-sm text-gray-400">Explore each team's performance, roster, achievements, evaluations and strategy planner.</p>
+            <p className="mt-3 text-sm text-gray-400">Explore seven teams across our Men and Ladies Divisions. Select a team for performance, roster, achievements and evaluations.</p>
           </div>
-          <div className="mt-7 grid gap-5 sm:grid-cols-2">
-            {teams.map((team) => (
-              <button key={team.name} type="button" onClick={() => chooseTeam(team.name)}
-                className="group flex min-h-80 flex-col items-center rounded-3xl border border-pink-500/25 bg-gradient-to-b from-[#26131f] to-[#120e13] p-6 text-center transition-all hover:-translate-y-1 hover:border-pink-400 hover:shadow-[0_20px_65px_rgba(200,25,107,0.12)]">
-                <div className="flex h-36 w-36 items-center justify-center rounded-full bg-black/35 p-3">
-                  <Image src={getTeamTheme(team.name).logo} width={150} height={150}
-                    alt={team.name + ' logo'} className="h-full w-full object-contain" />
+          <div className="mt-8 space-y-11">
+            {Object.entries(TEAM_DIVISIONS).map(([division, names]) => (
+              <div key={division} className="rounded-3xl border border-white/10 bg-[#140f15]/85 p-4 sm:p-6">
+                <div className="mb-5 flex items-center gap-3">
+                  <span className="h-7 w-1.5 rounded-full bg-pink-400" aria-hidden="true" />
+                  <h3 className="text-xl font-black uppercase tracking-wider text-white sm:text-2xl">{division}</h3>
+                  <span className="ml-auto rounded-full border border-white/15 px-3 py-1 text-xs text-gray-400">{names.length} Teams</span>
                 </div>
-                <h3 className="mt-5 text-2xl font-black uppercase text-white">{team.name}</h3>
-                <p className="mt-3 max-w-md whitespace-pre-line text-sm leading-6 text-gray-300">{profile[team.description]}</p>
-                <span className="mt-auto pt-5 text-xs font-black uppercase tracking-widest text-pink-300 group-hover:text-white">Explore Team →</span>
-              </button>
+                <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                  {names.map((team) => {
+                    const theme = getTeamTheme(team);
+                    const intro = team === 'DAG Ladies' ? profile.ladies_intro
+                      : team === 'DAG Montrix' ? profile.montrix_intro
+                      : teamIntros[team] || fallbackIntros[team] || 'Explore this DAG Esports team.';
+                    return (
+                      <button key={team} type="button" onClick={() => chooseTeam(team)}
+                        style={themeStyle(team)}
+                        className="group flex min-h-72 flex-col items-center rounded-2xl border border-accent/45 bg-gradient-to-b from-accent-deep/65 to-[#0b0a0f] px-4 py-6 text-center transition-all hover:-translate-y-1 hover:border-accent hover:shadow-[0_12px_38px_var(--accent-glow-soft)] focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent">
+                        <div className="flex h-32 w-32 items-center justify-center rounded-full border border-accent/30 bg-black/40 p-2 sm:h-36 sm:w-36">
+                          <Image src={theme.logo} width={150} height={150}
+                            alt={team + ' team logo'} className="h-full w-full object-contain" />
+                        </div>
+                        <h4 className="mt-5 text-lg font-black uppercase tracking-wide text-white">{team}</h4>
+                        <p className="mt-2 max-w-xs whitespace-pre-line text-xs leading-5 text-gray-300">{intro}</p>
+                        <span className="mt-auto pt-5 text-[11px] font-black uppercase tracking-widest text-accent group-hover:text-white">Explore Team →</span>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
             ))}
           </div>
         </section>
@@ -134,7 +158,7 @@ export default function DagEsportsHome() {
           <div className="text-center">
             <p className="text-xs font-black uppercase tracking-[0.25em] text-amber-300">Our Legacy</p>
             <h2 className="mt-2 text-3xl font-black uppercase sm:text-4xl">🏆 DAG Hall of Fame</h2>
-            <p className="mt-3 text-sm text-gray-400">Honoring standout moments from DAG Ladies and DAG Montrix.</p>
+            <p className="mt-3 text-sm text-gray-400">Honoring standout achievements from all seven DAG Esports teams.</p>
           </div>
           {loading ? <p role="status" className="mt-8 text-center text-sm text-gray-400">Loading featured achievements...</p>
             : featured.length === 0 ? (
