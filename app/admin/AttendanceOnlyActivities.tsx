@@ -50,13 +50,6 @@ export default function AttendanceOnlyActivities({ activeTeam, roster, activityT
   const [refresh, setRefresh] = useState(0);
 
   useEffect(() => {
-    setDate('');
-    setScreenshots('');
-    setAttendance({});
-    setEditingId(null);
-  }, [activeTeam, activityType]);
-
-  useEffect(() => {
     let cancelled = false;
     async function load() {
       setLoading(true);
