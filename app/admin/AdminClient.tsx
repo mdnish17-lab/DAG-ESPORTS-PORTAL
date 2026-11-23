@@ -6,12 +6,12 @@ import PlayerEvaluationPanel from './PlayerEvaluationPanel';
 import MatchEvaluationTracker from './MatchEvaluationTracker';
 import CoachDashboard from './CoachDashboard';
 import WeeklyReportPanel from './WeeklyReportPanel';
-import { getTeamTheme, themeStyle } from '../../lib/teamTheme';
+import { getTeamTheme, themeStyle, TEAMS, DEFAULT_TEAM } from '../../lib/teamTheme';
+import TeamSelector from '../../lib/TeamSelector';
 import { supabase } from '../../lib/supabase';
 import { useEffect, useState } from 'react';
 
 const ROLES = ['Coach', 'Manager', 'Midlaner', 'Jungler', 'Roamer', 'Goldlaner', 'Explaner'];
-const TEAMS = ['DAG Ladies', 'DAG Montrix'];
 const MATCH_TYPES = ['Scrim', 'Tournament', 'Scrim Bracket'];
 const TABS = ['Coach Dashboard', 'Guide', 'Roster', 'Match Log', 'Player Evaluation', 'Weekly Report', 'Upcoming', 'Achievements'] as const;
 
@@ -41,7 +41,7 @@ function check(res: { error: any }, label: string) {
 }
 
 export default function AdminPage() {
-  const [activeTeam, setActiveTeamState] = useState<string>('DAG Ladies');
+  const [activeTeam, setActiveTeamState] = useState<string>(DEFAULT_TEAM);
   const [teamReady, setTeamReady] = useState(false);
   useEffect(() => {
     const saved = localStorage.getItem('dag-active-team');
@@ -408,15 +408,12 @@ export default function AdminPage() {
             <Link href="/management" className="bg-gray-800/80 backdrop-blur hover:bg-gray-700 px-4 py-2 rounded text-sm font-bold uppercase transition-colors">← Management</Link>
             <AdminLogoutButton />
           </div>
-          <div className="grid grid-cols-2 gap-2 sm:flex">
-            {TEAMS.map((team) => (
-              <button key={team} onClick={() => { setActiveTeam(team); resetMatchForm(); setFocusEvalMatchId(null); setEvalOpenVersion((n) => n + 1); }}
-                className={`min-h-11 min-w-0 rounded-xl border-2 px-2 py-2 text-center text-[11px] font-extrabold uppercase leading-tight tracking-wide transition-colors sm:px-6 sm:text-sm ${
-                  activeTeam === team ? 'border-accent bg-accent text-white' : 'border-gray-800 bg-black/50 backdrop-blur text-gray-400 hover:border-gray-600'}`}>
-                {team}
-              </button>
-            ))}
-          </div>
+          <TeamSelector value={activeTeam} onChange={(team) => {
+            setActiveTeam(team);
+            resetMatchForm();
+            setFocusEvalMatchId(null);
+            setEvalOpenVersion((n) => n + 1);
+          }} />
         </div>
 
         <div className="mb-8">
