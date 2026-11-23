@@ -145,6 +145,7 @@ export default function AttendanceOnlyActivities({ activeTeam, roster, activityT
     setDate(activity.activity_date);
     setScreenshots(activity.result_screenshots || '');
     setAttendance(Object.fromEntries(activity.members.map((member) => [member.member_id, member.status])));
+    setError('');
   }
 
   async function remove(activity: Activity) {
@@ -213,7 +214,7 @@ export default function AttendanceOnlyActivities({ activeTeam, roster, activityT
         </div>
         {error && <p role="alert" className="rounded-lg border border-red-800 bg-red-950/30 p-3 text-xs text-red-300">{error}</p>}
         <div className="flex gap-2">
-          <button type="submit" disabled={saving || loading || roster.length === 0 || !!error}
+          <button type="submit" disabled={saving || loading || roster.length === 0}
             className="flex-1 rounded-lg bg-accent px-4 py-3 text-sm font-black uppercase text-white disabled:opacity-50">
             {saving ? 'Saving...' : editingId ? 'Update attendance' : 'Save attendance'}
           </button>
