@@ -4,9 +4,9 @@ import Image from 'next/image';
 import Link from 'next/link';
 import DagHomeNavigation from '../../lib/DagHomeNavigation';
 import { supabase } from '../../lib/supabase';
+import { DEFAULT_TEAM, TEAMS } from '../../lib/teamTheme';
 import { useEffect, useRef, useState } from 'react';
 
-const TEAMS = ['DAG Ladies', 'DAG Montrix'];
 
 type Tool = 'move' | 'draw' | 'erase';
 type Token = { id: string; team: 'blue' | 'red'; label: string; role: string; x: number; y: number; visible: boolean };
@@ -29,7 +29,7 @@ const makeTokens = (): Token[] => [
 ];
 
 export default function PlannerPage() {
-  const [activeTeam, setActiveTeamState] = useState<string>('DAG Ladies');
+  const [activeTeam, setActiveTeamState] = useState<string>(DEFAULT_TEAM);
   const [teamReady, setTeamReady] = useState(false);
   useEffect(() => {
     const saved = localStorage.getItem('dag-active-team');
