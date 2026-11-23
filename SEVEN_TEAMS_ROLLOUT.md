@@ -34,15 +34,16 @@ No initial player, match, report, achievement or KPI values are fabricated for n
 
 1. Make a verified backup in Supabase.
 2. Run `supabase/14_SEVEN_TEAMS.sql` (requires SQL 13). It adds public-readable, Owner-editable team introductions for all seven, retaining the legacy Ladies and Montrix introduction fields and their existing values in `dag_site_profile`.
-3. Review the **final read-only constraint audit output**. The original production database might have been created with two-team `CHECK` constraints, outside this repository's tracked migrations. If any constraint restricts `team` to DAG Ladies / DAG Montrix, STOP: report its exact table and definition before adding data. Do not drop or weaken it blindly. The expansion will need a targeted reviewed migration for that constraint.
-4. Check the four new introduction RLS policies: anonymous can SELECT and only a verified approved Owner can INSERT/UPDATE/DELETE.
-5. On the Vercel preview, visit the main page and confirm the 4+3 team listing and logo/color mapping; choose each and confirm correct team name and empty-state records.
-6. Log in as Owner, edit the five new introductions in Management → Admin and verify they appear on the homepage. Existing Ladies and Montrix intro editing remains unchanged.
-7. Test creating one test player, match and weekly report for a new team, then remove test data carefully. Verify records never appear under another team.
-8. Test all existing data and exports for DAG Ladies and DAG Montrix to confirm no regressions.
-9. Only merge after database checks, build validation and preview smoke tests are complete.
+3. **Confirmed from the user's SQL 14 audit:** `weekly_player_kpi_team_check` and `weekly_player_reports_team_check` currently permit only DAG Ladies and DAG Montrix. After a verified backup, run [`supabase/15_EXPAND_WEEKLY_TEAM_CHECKS.sql`](supabase/15_EXPAND_WEEKLY_TEAM_CHECKS.sql). SQL 15 guards the exact existing definitions, updates only these two constraints transactionally and verifies the seven permitted teams. It is rerunnable and stops on unexpected definitions. Do **not** rerun it blindly if the audit changes or it fails.
+4. Run the final SQL 15 verification SELECT: both constraints must show seven exact team names and `validated = true`. All seven new team names can then pass these two CHECK constraints. Other table permissions and data must still be verified independently.
+5. Check the four new introduction RLS policies: anonymous can SELECT and only a verified approved Owner can INSERT/UPDATE/DELETE.
+6. On the Vercel preview, visit the main page and confirm the 4+3 team listing and logo/color mapping; choose each and confirm correct team name and empty-state records.
+7. Log in as Owner, edit the five new introductions in Management → Admin and verify they appear on the homepage. Existing Ladies and Montrix intro editing remains unchanged.
+8. Test creating one test player, match and weekly report for a new team, then remove test data carefully. Verify records never appear under another team.
+9. Test all existing data and exports for DAG Ladies and DAG Montrix to confirm no regressions.
+10. Only merge after database checks, build validation and preview smoke tests are complete.
 
-**Important:** GitHub deployment does not run SQL 14 automatically. Database migration and CI preview are separate approval steps. Do not merge to production until both succeed.
+**Important:** GitHub deployment does not run SQL 14 or SQL 15 automatically. Database migration and CI preview are separate approval steps. Do not merge to production until both succeed.
 
 ## Privacy
 
